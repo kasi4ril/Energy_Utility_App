@@ -136,10 +136,13 @@ func main() {
 	s09Handler.RegisterRoutes(mux)
 	log.Println("[INFO] S09 Executive Command & Predictive Maintenance routes registered.")
 
-	// 5. Configure HTTP Server
+	// Pre-seed demo accounts and operational telemetry
+	SeedDemoData(foundationService, s03Repo, s04Repo, s05Repo, s06Repo, s07Repo)
+
+	// 5. Configure HTTP Server with CORS support
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%s", port),
-		Handler:      mux,
+		Handler:      withCORS(mux),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
@@ -173,4 +176,17 @@ func getEnv(key, defaultVal string) string {
 		return val
 	}
 	return defaultVal
+}
+
+func withCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, X-Signature-SHA256")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

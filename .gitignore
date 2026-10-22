@@ -36,8 +36,8 @@ ENV/
 # Go Artifacts
 *.test
 *.out
-server
 /services/core-api/server
+/services/core-api/cmd/server/server
 /services/core-api/bin/
 /bin/
 
