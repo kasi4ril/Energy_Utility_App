@@ -6,7 +6,6 @@
 import React from "react";
 import { HydroPlantSummary } from "./types";
 import { Badge } from "../../components/ui/Badge";
-import { Card } from "../../components/ui/Card";
 
 interface FleetBoardProps {
   plants: HydroPlantSummary[];
