@@ -120,3 +120,4 @@ export interface CustomerCareAnalytics {
   category_distribution: { category: TicketCategory; label: string; count: number; pct: number }[];
   hotspot_feeders: { feeder: string; fault_count: number; open_count: number }[];
 }
+

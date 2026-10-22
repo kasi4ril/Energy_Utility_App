@@ -118,3 +118,4 @@ export const CommercialRevenueAnalyticsView: React.FC = () => {
     </div>
   );
 };
+

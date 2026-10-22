@@ -48,16 +48,16 @@ export const ZoneC_ActionQueue: React.FC<ActionQueueProps> = ({ logs, onSelectLo
                 <TableRow key={l.id} onClick={() => onSelectLog(l)}>
                   <TableCell className="font-mono text-emerald-400 font-semibold">{l.plant_id}</TableCell>
                   <TableCell className="font-bold">{l.mw_generated} MW</TableCell>
-                  <TableCell>{l.water_level_meters} m</TableCell>
+                  <TableCell>{(l as any).water_level_meters ?? l.water_level_m} m</TableCell>
                   <TableCell>
                     <span className={l.bearing_vibration_mm_s >= 4.5 ? "text-rose-400 font-bold" : ""}>
                       {l.bearing_vibration_mm_s} mm/s
                     </span>
                   </TableCell>
-                  <TableCell>{l.stator_temp_celsius}°C</TableCell>
+                  <TableCell>{(l as any).stator_temp_celsius ?? l.stator_winding_temp_c}°C</TableCell>
                   <TableCell>
-                    <Badge variant={l.in_service ? "success" : "danger"}>
-                      {l.in_service ? "IN SERVICE" : "OUT"}
+                    <Badge variant={l.plant_state === "IN_SERVICE" || (l as any).in_service ? "success" : "danger"}>
+                      {l.plant_state || ((l as any).in_service ? "IN SERVICE" : "OUT")}
                     </Badge>
                   </TableCell>
                 </TableRow>

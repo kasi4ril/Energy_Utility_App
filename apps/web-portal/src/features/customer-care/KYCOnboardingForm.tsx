@@ -310,3 +310,4 @@ export const KYCOnboardingForm: React.FC<KYCOnboardingFormProps> = ({
     </div>
   );
 };
+

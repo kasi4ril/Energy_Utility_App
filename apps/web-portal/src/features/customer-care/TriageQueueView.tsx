@@ -281,3 +281,4 @@ export const TriageQueueView: React.FC<TriageQueueViewProps> = ({
     </div>
   );
 };
+

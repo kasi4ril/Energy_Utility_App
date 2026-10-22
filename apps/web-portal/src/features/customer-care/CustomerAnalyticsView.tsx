@@ -197,3 +197,4 @@ export const CustomerAnalyticsView: React.FC<CustomerAnalyticsViewProps> = ({
     </div>
   );
 };
+
