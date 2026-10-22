@@ -18,7 +18,7 @@ export const ZoneB_DashboardRibbon: React.FC<ZoneBProps> = ({ summary, onCapture
     {
       id: "power",
       title: "Total Available Power",
-      value: summary ? `${summary.total_available_power_mw.toFixed(1)} MW` : "62.5 MW",
+      value: summary?.total_available_power_mw != null ? `${summary.total_available_power_mw.toFixed(1)} MW` : "62.5 MW",
       changePct: 2.1,
       trend: "UP",
       status: "NORMAL",
@@ -26,7 +26,7 @@ export const ZoneB_DashboardRibbon: React.FC<ZoneBProps> = ({ summary, onCapture
     {
       id: "feeders",
       title: "Feeders in Service",
-      value: summary
+      value: summary?.feeders_summary
         ? `${summary.feeders_summary.in_service_count} / ${summary.feeders_summary.total_feeders}`
         : "28 / 32",
       status: "NORMAL",
@@ -34,7 +34,7 @@ export const ZoneB_DashboardRibbon: React.FC<ZoneBProps> = ({ summary, onCapture
     {
       id: "revenue",
       title: "Total Shift Collections",
-      value: summary
+      value: summary?.revenue_summary
         ? `₦${(summary.revenue_summary.total_collected_amount / 1000000).toFixed(2)}M`
         : "₦4.85M",
       changePct: 6.4,
@@ -44,7 +44,7 @@ export const ZoneB_DashboardRibbon: React.FC<ZoneBProps> = ({ summary, onCapture
     {
       id: "theft",
       title: "Open Integrity Alerts",
-      value: summary ? `${summary.theft_alerts_open_count} Alerts` : "3 Alerts",
+      value: summary?.theft_alerts_open_count != null ? `${summary.theft_alerts_open_count} Alerts` : "3 Alerts",
       status: "WARNING",
     },
   ];

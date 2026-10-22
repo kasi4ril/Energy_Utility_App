@@ -16,14 +16,14 @@ interface ActionQueueProps {
 }
 
 export const ZoneC_ActionQueue: React.FC<ActionQueueProps> = ({
-  actionItems,
+  actionItems = [],
   userRole,
   onSelectAction,
   onDecideAction,
 }) => {
   const [filterRole, setFilterRole] = useState(userRole || "ALL");
 
-  const filtered = actionItems.filter((i) => {
+  const filtered = (actionItems || []).filter((i) => {
     if (filterRole === "ALL") return true;
     return i.target_role === filterRole;
   });

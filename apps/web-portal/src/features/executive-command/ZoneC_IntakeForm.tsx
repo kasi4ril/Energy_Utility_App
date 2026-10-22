@@ -12,7 +12,8 @@ interface IntakeFormProps {
   onSelectTrigger?: (trigger: PredictiveTriggerDTO) => void;
 }
 
-export const ZoneC_IntakeForm: React.FC<IntakeFormProps> = ({ triggers, onSelectTrigger }) => {
+export const ZoneC_IntakeForm: React.FC<IntakeFormProps> = ({ triggers = [], onSelectTrigger }) => {
+  const list = triggers || [];
   return (
     <div className="bg-slate-800/90 border border-slate-700/80 rounded-xl p-5 shadow-lg flex flex-col h-full">
       <div className="pb-3 border-b border-slate-700/60 mb-4 flex items-center justify-between">
@@ -24,12 +25,12 @@ export const ZoneC_IntakeForm: React.FC<IntakeFormProps> = ({ triggers, onSelect
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-xs">
-        {triggers.length === 0 ? (
+        {list.length === 0 ? (
           <div className="text-center py-12 text-xs text-slate-500">
             All generation, transformer, and feeder assets operating within safe envelopes.
           </div>
         ) : (
-          triggers.map((t) => (
+          list.map((t) => (
             <div
               key={t.id}
               onClick={() => onSelectTrigger && onSelectTrigger(t)}
