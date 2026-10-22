@@ -95,3 +95,31 @@ export function isExecutiveRole(role: string): boolean {
   ].includes(role);
 }
 
+/**
+ * Generates a valid client-side development JWT token for instantaneous exploration.
+ */
+export function generateDevToken(role: PrimaryRole = "MD", name: string = "Development Administrator"): string {
+  const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }))
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+
+  const claims: AuthClaims = {
+    staff_id: "dev-staff-" + role.toLowerCase().replace(/_/g, "-"),
+    staff_number: "DEV-" + role.substring(0, 4),
+    full_name: name,
+    primary_role: role,
+    org_unit_id: "HQ-JOS",
+    can_view_executive_dashboard: true,
+    exp: Math.floor(Date.now() / 1000) + 86400 * 30, // 30 days validity
+    iat: Math.floor(Date.now() / 1000),
+  };
+
+  const payload = btoa(JSON.stringify(claims))
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+
+  return `${header}.${payload}.devTokenForDemoExplorationOnly`;
+}
+

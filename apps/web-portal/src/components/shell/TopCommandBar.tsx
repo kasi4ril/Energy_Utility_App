@@ -37,6 +37,30 @@ export const TopCommandBar: React.FC<TopCommandBarProps> = ({
           <span className="text-slate-400">Shift Handover:</span>
           <span className="text-emerald-300 font-medium">ACTIVE (08:00 - 16:00)</span>
         </div>
+
+        {/* Global Dev Navigation Dropdown */}
+        <div className="hidden lg:flex items-center pl-3">
+          <select
+            onChange={(e) => {
+              if (e.target.value) window.location.href = e.target.value;
+            }}
+            defaultValue=""
+            className="px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-emerald-300 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+          >
+            <option value="" disabled>Jump to Department ▾</option>
+            <option value="/executive-command">👑 Executive Command Center</option>
+            <option value="/portal/customer-care">📞 Customer Care & KYC</option>
+            <option value="/portal/services/feeder">⚡ Feeder Maintenance</option>
+            <option value="/portal/services/transformer">🔄 Transformer Maintenance</option>
+            <option value="/portal/services/metering">⏱️ Metering Operations</option>
+            <option value="/portal/generation-master">🌊 Generation Master Station</option>
+            <option value="/portal/energy-management">🎛️ Central Energy Dispatch</option>
+            <option value="/portal/stores">📦 Stores & Warehouse</option>
+            <option value="/portal/internal-audit">⚖️ Internal Audit Desk</option>
+            <option value="/portal/billing-commercial">💳 Billing & Commercial Ops</option>
+            <option value="/field-pwa/tasks">📱 Field Technician PWA</option>
+          </select>
+        </div>
       </div>
 
       <div className="flex items-center space-x-4">
