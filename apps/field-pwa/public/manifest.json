@@ -1,0 +1,22 @@
+{
+  "name": "NESCO Field Operations PWA",
+  "short_name": "NESCO Field",
+  "description": "Offline-first mobile PWA for field crews and substation technicians",
+  "start_url": "/tasks",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#059669",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+

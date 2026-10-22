@@ -1,0 +1,48 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Environment & Secrets (Keep .env.example)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Node / Frontend Artifacts
+node_modules/
+.next/
+out/
+build/
+dist/
+.npm
+.yarn
+*.tsbuildinfo
+
+# Python Artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# Go Artifacts
+*.test
+*.out
+server
+/services/core-api/server
+/services/core-api/bin/
+/bin/
+
+# IDE / Editor Files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace

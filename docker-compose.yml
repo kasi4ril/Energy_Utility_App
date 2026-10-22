@@ -1,0 +1,120 @@
+version: "3.8"
+
+networks:
+  nesco-mesh:
+    driver: bridge
+
+volumes:
+  pgdata:
+  natsdata:
+
+services:
+  # 1. PostgreSQL 16 with PostGIS & TimescaleDB
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: nesco-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-nesco_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-nesco_master_secret_pass_2026!}
+      POSTGRES_DB: ${DB_NAME:-nesco_enterprise_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d/migrations:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-nesco_admin} -d ${DB_NAME:-nesco_enterprise_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nesco-mesh
+
+  # 2. NATS JetStream Message Broker
+  nats:
+    image: nats:2.10-alpine
+    container_name: nesco-nats
+    restart: unless-stopped
+    command: ["-js", "-m", "8222"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    volumes:
+      - natsdata:/data
+    networks:
+      - nesco-mesh
+
+  # 3. Python Local AI Guardian Service (Ollama Air-Gapped Bridge)
+  ai-guardian:
+    build:
+      context: ./services/ai-guardian
+      dockerfile: Dockerfile
+    container_name: nesco-ai-guardian
+    restart: unless-stopped
+    environment:
+      PORT: "8001"
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+      ENVIRONMENT: production
+    ports:
+      - "8001:8001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - nesco-mesh
+
+  # 4. Go Core API Gateway
+  core-api:
+    build:
+      context: ./services/core-api
+      dockerfile: Dockerfile
+    container_name: nesco-core-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+      ai-guardian:
+        condition: service_healthy
+    environment:
+      PORT: "8080"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${DB_USER:-nesco_admin}
+      DB_PASSWORD: ${DB_PASSWORD:-nesco_master_secret_pass_2026!}
+      DB_NAME: ${DB_NAME:-nesco_enterprise_db}
+      NATS_URL: nats://nats:4222
+      AI_SIDECAR_URL: http://ai-guardian:8001
+      HMAC_SECRET: ${HMAC_SECRET:-nesco-master-hmac-integrity-key-32b!}
+      JWT_SECRET: ${JWT_SECRET:-nesco-master-jwt-security-key-32b!!}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - nesco-mesh
+
+  # 5. Next.js Enterprise Web Portal
+  web-portal:
+    build:
+      context: ./apps/web-portal
+      dockerfile: Dockerfile
+    container_name: nesco-web-portal
+    restart: unless-stopped
+    depends_on:
+      - core-api
+    environment:
+      PORT: "3000"
+      NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
+    ports:
+      - "3000:3000"
+    networks:
+      - nesco-mesh
+

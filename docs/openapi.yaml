@@ -1,0 +1,1987 @@
+openapi: 3.0.3
+info:
+  title: NESCO Enterprise Utility Platform API
+  description: Core API Gateway for Grid Intelligence, Inter-Departmental Workflows, and Local AI Governance.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local Core API Gateway
+paths:
+  /auth/login:
+    post:
+      summary: Staff Authentication Handshake
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successfully authenticated, returns 15-minute JWT
+        '401':
+          description: Invalid credentials or tampered HMAC signature
+
+  /foundation/org-units:
+    get:
+      summary: List Organizational Units
+      tags: [Foundation]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Array of registered organizational units
+    post:
+      summary: Register Organizational Unit
+      tags: [Foundation]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [unit_code, name, unit_type]
+              properties:
+                unit_code: {type: string}
+                name: {type: string}
+                unit_type: {type: string, enum: [HQ, DISTRICT, SERVICE_UNIT, MASTER_STATION, GENERATING_PLANT]}
+                parent_id: {type: string, format: uuid}
+                latitude: {type: number}
+                longitude: {type: number}
+      responses:
+        '201':
+          description: Unit created
+        '422':
+          description: Administrative hierarchy violation
+
+  /foundation/staff:
+    get:
+      summary: List Staff Profiles
+      tags: [Foundation]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: org_unit_id
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: List of staff profiles
+    post:
+      summary: Register Staff Profile
+      tags: [Foundation]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [staff_number, full_name, email, password, role, org_unit_id]
+              properties:
+                staff_number: {type: string}
+                full_name: {type: string}
+                email: {type: string}
+                password: {type: string}
+                role: {type: string}
+                org_unit_id: {type: string, format: uuid}
+      responses:
+        '201':
+          description: Staff profile registered with row HMAC signature
+
+  /foundation/staff/transfer:
+    post:
+      summary: Execute Staff Transfer
+      tags: [Foundation]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [staff_id, new_org_unit_id, new_role]
+              properties:
+                staff_id: {type: string, format: uuid}
+                new_org_unit_id: {type: string, format: uuid}
+                new_role: {type: string}
+      responses:
+        '200':
+          description: Staff successfully transferred and re-signed
+
+  /foundation/assets:
+    get:
+      summary: List Grid Assets
+      tags: [Foundation]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: parent_id
+          schema: {type: string, format: uuid}
+        - in: query
+          name: asset_type
+          schema: {type: string}
+      responses:
+        '200':
+          description: List of physical electrical assets
+    post:
+      summary: Register Grid Asset
+      tags: [Foundation]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset_code, asset_type, org_unit_id, rated_capacity_kva, latitude, longitude]
+              properties:
+                asset_code: {type: string}
+                asset_type: {type: string, enum: [PLANT, SUBSTATION_33KV, FEEDER_11KV, TRANSFORMER_DT, SERVICE_POLE, CUSTOMER_METER]}
+                parent_asset_id: {type: string, format: uuid}
+                org_unit_id: {type: string, format: uuid}
+                rated_capacity_kva: {type: number}
+                tariff_band: {type: string, enum: [A, B, C, D, E]}
+                latitude: {type: number}
+                longitude: {type: number}
+      responses:
+        '201':
+          description: Asset registered with PostGIS geometry and HMAC signature
+        '422':
+          description: Grid topology violation
+
+  /notes/{entityType}/{entityId}:
+    get:
+      summary: Get WorkNotes Stream for Entity
+      tags: [WorkNotes]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: entityType
+          required: true
+          schema: {type: string}
+        - in: path
+          name: entityId
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Chronological list of chained notes
+    post:
+      summary: Append Immutable WorkNote to Entity
+      tags: [WorkNotes]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: entityType
+          required: true
+          schema: {type: string}
+        - in: path
+          name: entityId
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [author_staff_id, note_text]
+              properties:
+                author_staff_id: {type: string, format: uuid}
+                tagged_unit_ids: {type: array, items: {type: string, format: uuid}}
+                note_text: {type: string}
+      responses:
+        '201':
+          description: Note appended with SHA-256 prev-hash link
+
+  /maker-checker/request:
+    post:
+      summary: Submit Operational Change for AI Fraud Risk Scoring & Review
+      tags: [MakerChecker]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [module, change_category, target_record_id, payload_json, justification]
+              properties:
+                module: {type: string}
+                change_category: {type: string, enum: [TARIFF_BAND_CHANGE, DEBT_ADJUSTMENT, METER_SWAP, STORE_STOCK_EDIT, ALLOWANCE_OVERRIDE]}
+                target_record_id: {type: string}
+                payload_json: {type: string}
+                justification: {type: string}
+      responses:
+        '201':
+          description: Change request registered with AI risk score and reasoning
+
+  /maker-checker/requests:
+    get:
+      summary: List Maker-Checker Requests
+      tags: [MakerChecker]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema: {type: string, enum: [PENDING, APPROVED, REJECTED, CANCELLED]}
+        - in: query
+          name: module
+          schema: {type: string}
+      responses:
+        '200':
+          description: Filtered list of change requests
+
+  /maker-checker/{id}/approve:
+    post:
+      summary: Approve Maker-Checker Change Request
+      tags: [MakerChecker]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                checker_note: {type: string}
+      responses:
+        '200':
+          description: Request approved and cryptographic audit chain row appended
+        '422':
+          description: Maker self-approval violation or insufficient risk authorization
+
+  /maker-checker/{id}/reject:
+    post:
+      summary: Reject Maker-Checker Change Request
+      tags: [MakerChecker]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: {type: string}
+      responses:
+        '200':
+          description: Request marked rejected
+
+  /audit/chain/{tableName}/{recordId}:
+    get:
+      summary: Retrieve and Verify Cryptographic SHA-256 Audit Chain
+      tags: [AuditChain]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: tableName
+          required: true
+          schema: {type: string}
+        - in: path
+          name: recordId
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Valid continuous audit chain returned
+        '409':
+          description: Cryptographic violation - audit chain hash mismatch detected
+
+  /chat/message:
+    post:
+      summary: Send Community Message or Query @GridAssistant
+      tags: [Chat]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message_text]
+              properties:
+                channel_id: {type: string, default: general}
+                message_text: {type: string}
+      responses:
+        '201':
+          description: Message recorded; returns co-pilot reply if assistant was tagged
+
+  /chat/messages:
+    get:
+      summary: List Channel Chat Messages
+      tags: [Chat]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: channel_id
+          schema: {type: string, default: general}
+        - in: query
+          name: limit
+          schema: {type: integer, default: 50}
+      responses:
+        '200':
+          description: Chronological list of channel messages
+
+  /customers/onboard:
+    post:
+      summary: Anti-Ghost Customer Onboarding with DT Proximity Lock
+      tags: [CustomerCare]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [full_name, phone, building_class, latitude, longitude, transformer_id, tariff_band]
+              properties:
+                full_name: {type: string}
+                phone: {type: string}
+                nin: {type: string}
+                building_class: {type: string, enum: [RESIDENTIAL, COMMERCIAL, INDUSTRIAL, SPECIAL]}
+                latitude: {type: number}
+                longitude: {type: number}
+                transformer_id: {type: string, format: uuid}
+                meter_serial: {type: string}
+                tariff_band: {type: string, enum: [BAND_A, BAND_B, BAND_C, BAND_D, BAND_E]}
+      responses:
+        '201':
+          description: Customer successfully onboarded and assigned CIN / Account Number
+        '400':
+          description: Validation error or distance > 500m from assigned DT
+
+  /customers:
+    get:
+      summary: List Registered Customers
+      tags: [CustomerCare]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: transformer_id
+          schema: {type: string, format: uuid}
+        - in: query
+          name: limit
+          schema: {type: integer, default: 50}
+      responses:
+        '200':
+          description: List of registered customers
+
+  /customers/{id}:
+    get:
+      summary: Retrieve Customer Profile by UUID
+      tags: [CustomerCare]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Customer profile found
+        '404':
+          description: Customer record not found
+
+  /tickets:
+    post:
+      summary: Ingest Service Complaint with Direct SLA Routing
+      tags: [Tickets]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [channel, category, description, assigned_unit_id]
+              properties:
+                customer_id: {type: string, format: uuid}
+                channel: {type: string, enum: [WALK_IN, PHONE_CALL, WHATSAPP, EMAIL, WEB_PORTAL, FIELD_REPORT]}
+                category: {type: string, enum: [FEEDER_LINE_FAULT, TRANSFORMER_FUSE_BURNT, METER_FAULT, NEW_METER_INSTALL, BILLING_DISPUTE, OVERBILLING, GENERAL_INQUIRY]}
+                description: {type: string}
+                assigned_unit_id: {type: string, format: uuid}
+      responses:
+        '201':
+          description: Service ticket generated with direct Unit Head and Dept Head routing
+
+    get:
+      summary: List Service Tickets
+      tags: [Tickets]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema: {type: string}
+        - in: query
+          name: unit_id
+          schema: {type: string, format: uuid}
+        - in: query
+          name: category
+          schema: {type: string}
+      responses:
+        '200':
+          description: Array of service tickets matching filters
+
+  /tickets/{id}:
+    get:
+      summary: Retrieve Ticket by UUID
+      tags: [Tickets]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Ticket details
+        '404':
+          description: Ticket not found
+
+  /tickets/{id}/attend:
+    post:
+      summary: Technical Field Crew Submits Proof of Work
+      tags: [Tickets]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [proof_note]
+              properties:
+                proof_note: {type: string}
+      responses:
+        '200':
+          description: Ticket marked ATTENDED_TO with repair proof note
+
+  /tickets/{id}/confirm-close:
+    post:
+      summary: Customer Care Officer Performs Two-Step Closure Verification
+      tags: [Tickets]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirmed, feedback]
+              properties:
+                confirmed: {type: boolean}
+                feedback: {type: string}
+      responses:
+        '200':
+          description: Ticket transitioned to CLOSED_RESOLVED or REOPENED_ESCALATED
+
+  /meters/schedule:
+    post:
+      summary: Schedule Meter Installation or Inspection
+      tags: [Metering]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer_id, schedule_type, scheduled_date]
+              properties:
+                customer_id: {type: string, format: uuid}
+                ticket_id: {type: string, format: uuid}
+                schedule_type: {type: string, enum: [NEW_INSTALL, REPLACEMENT, RECERTIFICATION, TAMPER_INSPECTION]}
+                scheduled_date: {type: string, format: date-time}
+                assigned_metering_team_id: {type: string, format: uuid}
+      responses:
+        '201':
+          description: Meter activity scheduled successfully
+
+  /meters/schedules:
+    get:
+      summary: List Meter Activity Schedules
+      tags: [Metering]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema: {type: string, enum: [PENDING_DISPATCH, FIELD_ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED]}
+      responses:
+        '200':
+          description: Array of scheduled meter activities
+
+  /services/work-orders:
+    post:
+      summary: Dispatch Field Maintenance Work Order
+      tags: [ServicesMaintenance]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [unit_type, work_order_type, priority, team_lead_id, asset_id, instructions]
+              properties:
+                ticket_id: {type: string, format: uuid}
+                unit_type: {type: string, enum: [FEEDER_MAINT, TRANSFORMER_MAINT, METERING]}
+                work_order_type: {type: string, enum: [CORRECTIVE_REPAIR, PREVENTIVE_MAINTENANCE, EMERGENCY_OUTAGE, METER_INSTALLATION, DT_INSPECTION]}
+                priority: {type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL]}
+                team_lead_id: {type: string, format: uuid}
+                asset_id: {type: string, format: uuid}
+                ptw_required: {type: boolean}
+                ptw_permit_id: {type: string, format: uuid}
+                materials_requisition_ref: {type: string}
+                instructions: {type: string}
+      responses:
+        '201':
+          description: Work order created and dispatched to team lead
+        '400':
+          description: Validation error
+        '422':
+          description: Target asset not found or invalid business parameters
+
+    get:
+      summary: List Maintenance Work Orders
+      tags: [ServicesMaintenance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: unit
+          schema: {type: string, enum: [FEEDER_MAINT, TRANSFORMER_MAINT, METERING]}
+        - in: query
+          name: status
+          schema: {type: string}
+        - in: query
+          name: team_lead_id
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Array of maintenance work orders
+
+  /services/work-orders/{id}:
+    get:
+      summary: Retrieve Work Order by UUID
+      tags: [ServicesMaintenance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Maintenance work order record
+        '404':
+          description: Work order not found
+
+  /services/work-orders/{id}/proof:
+    post:
+      summary: Submit Field Proof of Work (Mobile PWA)
+      tags: [ServicesMaintenance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [latitude, longitude, before_photo_url, after_photo_url, photo_hash_before, photo_hash_after, work_details]
+              properties:
+                latitude: {type: number}
+                longitude: {type: number}
+                before_photo_url: {type: string}
+                after_photo_url: {type: string}
+                photo_hash_before: {type: string}
+                photo_hash_after: {type: string}
+                meter_seal_number: {type: string}
+                work_details: {type: string}
+      responses:
+        '201':
+          description: Field proof logged with AI GPS verification
+        '400':
+          description: Validation error
+        '422':
+          description: Anti-photo-reuse violation, unauthorized lead, or GPS out of tolerance
+
+    get:
+      summary: Retrieve Proof of Work Log
+      tags: [ServicesMaintenance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Proof of work log record
+        '404':
+          description: Proof record not found
+
+  /services/work-orders/{id}/verify:
+    post:
+      summary: Unit Head Verification & Customer Care Reversion
+      tags: [ServicesMaintenance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [approved, notes]
+              properties:
+                approved: {type: boolean}
+                notes: {type: string}
+      responses:
+        '200':
+          description: Work order transitioned to ATTENDED_VERIFIED or REJECTED_REWORK
+
+  /generation/telemetry:
+    post:
+      summary: Log Plant Hydrological and Generator Telemetry
+      tags: [Generation]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [shift_id, shift_window, plant_id, plant_state, water_level_m, mw_generated]
+              properties:
+                shift_id: {type: string}
+                shift_window: {type: string, enum: [MORNING, AFTERNOON, NIGHT]}
+                plant_id: {type: string, format: uuid}
+                plant_state: {type: string, enum: [IN_SERVICE, STANDBY, OUT_OF_SERVICE]}
+                water_level_m: {type: number}
+                headwater_elevation_m: {type: number}
+                tailwater_elevation_m: {type: number}
+                inflow_rate_m3_s: {type: number}
+                mw_generated: {type: number}
+                mvar_reactive: {type: number}
+                stator_winding_temp_c: {type: number}
+                bearing_vibration_mm_s: {type: number}
+                lube_oil_pressure_bar: {type: number}
+      responses:
+        '201':
+          description: Telemetry logged; returns early warning alerts if thresholds exceeded
+        '400':
+          description: Validation error
+        '422':
+          description: Physical boundary violation or asset not found
+
+    get:
+      summary: List Historical Generation Telemetry Logs
+      tags: [Generation]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: shift_id
+          schema: {type: string}
+        - in: query
+          name: plant_id
+          schema: {type: string, format: uuid}
+        - in: query
+          name: limit
+          schema: {type: integer, default: 50}
+      responses:
+        '200':
+          description: Array of generation telemetry entries
+
+  /generation/telemetry/latest/{plantId}:
+    get:
+      summary: Retrieve Most Recent Telemetry Entry for a Plant
+      tags: [Generation]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: plantId
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Latest plant telemetry reading
+        '404':
+          description: No telemetry found for plant
+
+  /generation/rollcall:
+    post:
+      summary: Record Remote Plant Physical Shift Roll-Call
+      tags: [Generation]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [shift_id, shift_window, plant_id, operator_names, handover_notes]
+              properties:
+                shift_id: {type: string}
+                shift_window: {type: string, enum: [MORNING, AFTERNOON, NIGHT]}
+                plant_id: {type: string, format: uuid}
+                operator_names: {type: array, items: {type: string}}
+                protection_engineers: {type: array, items: {type: string}}
+                technicians: {type: array, items: {type: string}}
+                handover_notes: {type: string}
+      responses:
+        '201':
+          description: Remote plant roll-call recorded
+
+    get:
+      summary: List Shift Roll-Calls across Plants 1–6
+      tags: [Generation]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: shift_id
+          schema: {type: string}
+      responses:
+        '200':
+          description: Array of remote plant roll-call rosters
+
+  /generation/faults:
+    post:
+      summary: Report Plant Fault and Request Workshop Fabrication
+      tags: [Generation]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plant_id, wing, fault_description]
+              properties:
+                plant_id: {type: string, format: uuid}
+                wing: {type: string, enum: [ELECTRICAL, MECHANICAL]}
+                fault_description: {type: string}
+                severity: {type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL]}
+                requires_workshop: {type: boolean}
+      responses:
+        '201':
+          description: Fault logged and escalated to GM / Workshop
+
+    get:
+      summary: List Plant Fault and Workshop Jobs
+      tags: [Generation]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: plant_id
+          schema: {type: string, format: uuid}
+        - in: query
+          name: wing
+          schema: {type: string, enum: [ELECTRICAL, MECHANICAL]}
+        - in: query
+          name: status
+          schema: {type: string}
+      responses:
+        '200':
+          description: Array of plant fault and workshop jobs
+
+  /generation/faults/{id}/gm-approval:
+    post:
+      summary: General Manager Material and Workshop Authorization Gate
+      tags: [Generation]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [approved, notes]
+              properties:
+                approved: {type: boolean}
+                notes: {type: string}
+      responses:
+        '200':
+          description: Job GM approval applied
+
+  /generation/faults/{id}/workshop:
+    post:
+      summary: Advance Central Workshop Fabrication Status
+      tags: [Generation]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string, format: uuid}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workshop_status]
+              properties:
+                workshop_status: {type: string, enum: [PENDING_DISPATCH, MACHINING_IN_PROGRESS, WINDING_FABRICATION, QUALITY_CHECK, COMPLETED_DELIVERED, REJECTED]}
+                store_requisition_ref: {type: string}
+      responses:
+        '200':
+          description: Workshop status advanced
+
+  /generation/webhook/google-forms:
+    post:
+      summary: Low-Bandwidth Standardized Google Forms Webhook Ingestion
+      tags: [Generation]
+      parameters:
+        - in: header
+          name: X-Signature-SHA256
+          required: true
+          schema: {type: string}
+          description: HMAC-SHA256 hexadecimal signature of the raw request payload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [shift_id, shift_window, master_operator_id, plants]
+      responses:
+        '200':
+          description: Multi-plant telemetry and roll-call successfully ingested
+        '401':
+          description: Missing or invalid HMAC-SHA256 webhook signature
+
+  /energy/bulk-intake:
+    post:
+      summary: Record Hourly Generation & TCN Bulk Power Intake
+      tags: [Energy Management]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [shift_id, shift_window, generation_mw_in, tcn_mw_in]
+              properties:
+                shift_id: {type: string}
+                shift_window: {type: string, enum: [MORNING, AFTERNOON, NIGHT]}
+                generation_mw_in: {type: number}
+                tcn_mw_in: {type: number}
+                substation_rollcall: {type: string}
+                handover_notes: {type: string}
+      responses:
+        '201':
+          description: Dispatch telemetry logged successfully
+    get:
+      summary: List Historical Dispatch Intake Logs
+      tags: [Energy Management]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: shift_id
+          schema: {type: string}
+        - in: query
+          name: limit
+          schema: {type: integer, default: 50}
+      responses:
+        '200':
+          description: Historical dispatch telemetry records
+
+  /energy/bulk-intake/latest:
+    get:
+      summary: Get Most Recent Dispatch Intake Telemetry
+      tags: [Energy Management]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Latest bulk intake record
+        '404':
+          description: No intake logs found
+
+  /energy/rationing/calculate:
+    post:
+      summary: Calculate Priority Feeder Rationing Allocation
+      tags: [Energy Management]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                available_bulk_mw: {type: number}
+      responses:
+        '200':
+          description: Priority allocation decisions per feeder
+        '412':
+          description: Precondition failed - no intake telemetry logged yet
+
+  /energy/feeders:
+    get:
+      summary: List Live Feeder Telemetry and States
+      tags: [Energy Management]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current feeder states and loads
+
+  /energy/feeders/{assetId}:
+    get:
+      summary: Get Feeder Telemetry by Asset UUID
+      tags: [Energy Management]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: assetId
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Feeder telemetry details
+        '404':
+          description: Feeder asset not found
+
+  /energy/webhook/google-forms:
+    post:
+      summary: Low-Bandwidth Google Form B Webhook Forwarder
+      tags: [Energy Management]
+      parameters:
+        - in: header
+          name: X-Signature-SHA256
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [shift_id, shift_window, operator_id, generation_mw_in, tcn_mw_in]
+      responses:
+        '200':
+          description: Form B telemetry ingested successfully
+        '401':
+          description: Invalid HMAC signature
+
+  /energy/ptw/request:
+    post:
+      summary: Step 1 - Request Safety Permit-to-Work Isolation
+      tags: [Permit to Work]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset_id, work_description]
+              properties:
+                asset_id: {type: string}
+                work_order_id: {type: string}
+                work_description: {type: string}
+      responses:
+        '201':
+          description: Safety permit requested successfully
+
+  /energy/ptw/{id}/approve:
+    post:
+      summary: Step 2 - Head of Services or Safety Rep Dual Approval
+      tags: [Permit to Work]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [approver_role]
+              properties:
+                approver_role: {type: string, enum: [HEAD_SERVICES, SAFETY_REP]}
+      responses:
+        '200':
+          description: Digital sign-off recorded
+
+  /energy/ptw/{id}/isolate:
+    post:
+      summary: Step 3 - Substation Operator Physical Isolation & Earthing
+      tags: [Permit to Work]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isolation_notes]
+              properties:
+                isolation_notes: {type: string, minLength: 10}
+      responses:
+        '200':
+          description: Isolation granted and line earthed
+
+  /energy/ptw/{id}/clear-safety:
+    post:
+      summary: Step 5a - HSE Safety Representative Work Complete Clearance
+      tags: [Permit to Work]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [notes]
+              properties:
+                notes: {type: string, minLength: 10}
+      responses:
+        '200':
+          description: Safety cleared for line restoration
+
+  /energy/ptw/{id}/restore:
+    post:
+      summary: Step 5b - Substation Operator Breaker Closure & Line Restoration
+      tags: [Permit to Work]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Line restored and permit closed
+
+  /energy/ptw/{id}:
+    get:
+      summary: Get Permit-to-Work by UUID or Permit Number
+      tags: [Permit to Work]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Safety permit details
+        '404':
+          description: Permit not found
+
+  /energy/ptw:
+    get:
+      summary: List Safety Permits
+      tags: [Permit to Work]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema: {type: string}
+        - in: query
+          name: asset_id
+          schema: {type: string}
+      responses:
+        '200':
+          description: Filtered list of safety permits
+
+  /stores/items:
+    post:
+      summary: Register Store Inventory SKU
+      tags: [Stores & Inventory]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [item_code, item_name, category, bin_location]
+      responses:
+        '201':
+          description: SKU registered with row-level HMAC signature
+    get:
+      summary: List Store Inventory Items
+      tags: [Stores & Inventory]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: category
+          schema: {type: string}
+        - in: query
+          name: low_stock
+          schema: {type: boolean}
+      responses:
+        '200':
+          description: Inventory items list
+
+  /stores/items/{code}:
+    get:
+      summary: Live @GridAssistant Stock Balance Lookup by SKU Code
+      tags: [Stores & Inventory]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Current available stock balance and bin location
+        '404':
+          description: Item code not found
+
+  /stores/items/{id}/stock:
+    post:
+      summary: Adjust Inventory Stock Balance
+      tags: [Stores & Inventory]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [delta]
+              properties:
+                delta: {type: number}
+      responses:
+        '200':
+          description: Stock adjusted successfully
+        '400':
+          description: Insufficient stock balance
+
+  /stores/requisitions:
+    post:
+      summary: Initiate Material Requisition (Path A or Path B)
+      tags: [Material Requisitions]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [origin_dept_id, items]
+      responses:
+        '201':
+          description: Requisition submitted successfully
+    get:
+      summary: List Material Requisitions
+      tags: [Material Requisitions]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema: {type: string}
+        - in: query
+          name: unit_head_id
+          schema: {type: string}
+      responses:
+        '200':
+          description: Material requisitions list
+
+  /stores/requisitions/{id}:
+    get:
+      summary: Get Material Requisition Details
+      tags: [Material Requisitions]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Requisition details
+        '404':
+          description: Requisition not found
+
+  /stores/requisitions/{id}/dept-approve:
+    post:
+      summary: Department Head or Generation GM Approval
+      tags: [Material Requisitions]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Requisition approved by department head
+
+  /stores/requisitions/{id}/audit-consent:
+    post:
+      summary: Internal Audit Compliance Consent or Query
+      tags: [Internal Audit Gate]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [consent]
+              properties:
+                consent: {type: boolean}
+                notes: {type: string}
+      responses:
+        '200':
+          description: Audit decision recorded
+
+  /stores/requisitions/{id}/md-approve:
+    post:
+      summary: Managing Director Procurement Approval (Path B Out-of-Stock)
+      tags: [Material Requisitions]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes: {type: string}
+      responses:
+        '200':
+          description: MD procurement approval granted
+
+  /stores/requisitions/{id}/issue:
+    post:
+      summary: Store Officer Material Issuance & Digital Waybill Generation
+      tags: [Stores & Inventory]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Material issued and digital waybill generated
+
+  /stores/scrap-returns:
+    post:
+      summary: Log Replaced Damaged Scrap into Store Scrap Yard
+      tags: [Reverse Logistics]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [requisition_id, scrap_condition_notes]
+      responses:
+        '201':
+          description: Scrap return logged and requisition reverse logistics hold cleared
+    get:
+      summary: List Reverse Logistics Scrap Return Records
+      tags: [Reverse Logistics]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: team_lead_id
+          schema: {type: string}
+      responses:
+        '200':
+          description: Scrap return records list
+
+  /audit/claims:
+    post:
+      summary: Staff Financial Allowance Claim Submission with 3-Way Verification
+      tags: [Staff Allowance Claims]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [claim_type, amount, claim_date]
+      responses:
+        '201':
+          description: Claim submitted and AI 3-way fraud score evaluated
+    get:
+      summary: Query Staff Allowance Claims
+      tags: [Staff Allowance Claims]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: staff_id
+          schema: {type: string}
+        - in: query
+          name: status
+          schema: {type: string}
+      responses:
+        '200':
+          description: Allowance claims list
+
+  /audit/claims/{id}:
+    get:
+      summary: Get Staff Claim Details with AI Fraud Score
+      tags: [Staff Allowance Claims]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Allowance claim details
+        '404':
+          description: Claim not found
+
+  /audit/claims/{id}/review:
+    post:
+      summary: Internal Auditor Formal Sign-Off on Staff Claim
+      tags: [Staff Allowance Claims]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [approve]
+              properties:
+                approve: {type: boolean}
+                notes: {type: string}
+      responses:
+        '200':
+          description: Auditor decision recorded
+
+  # Sprint 8: Billing, Commercial Operations & Revenue Protection AI
+  /billing/vending/vend:
+    post:
+      summary: Execute Metered Vending Payment & Generate STS Token
+      tags: [Billing & Vending]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer_id, account_number, meter_number, payment_channel_category, payment_platform_source, amount_paid]
+              properties:
+                tx_reference: {type: string}
+                customer_id: {type: string}
+                account_number: {type: string}
+                meter_number: {type: string}
+                payment_channel_category: {type: string, enum: [ONLINE_PORTAL, FINTECH_AGENCY, COMMERCIAL_BANK, POSTPAID_DIRECT]}
+                payment_platform_source: {type: string}
+                amount_paid: {type: number}
+                tariff_rate_per_kwh: {type: number}
+      responses:
+        '201':
+          description: Vending payment processed and 20-digit STS token generated
+
+  /billing/vending/{id}:
+    get:
+      summary: Retrieve Vending Payment Receipt
+      tags: [Billing & Vending]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Vending transaction details
+        '404':
+          description: Transaction not found
+
+  /billing/refunds:
+    post:
+      summary: Register Customer Meter-Purchase Refund Ledger
+      tags: [Meter Refund Ledgers]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer_id, meter_serial, initial_meter_cost]
+              properties:
+                customer_id: {type: string}
+                meter_serial: {type: string}
+                initial_meter_cost: {type: number}
+                refund_percentage_per_tx: {type: number, default: 10.0}
+      responses:
+        '201':
+          description: Meter refund ledger created
+
+  /billing/refunds/{customer_id}:
+    get:
+      summary: Retrieve Meter Refund Ledger by Customer
+      tags: [Meter Refund Ledgers]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: customer_id
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Active refund ledger details
+        '404':
+          description: Ledger not found
+
+  /billing/adjustments:
+    post:
+      summary: Propose Billing Adjustment for Dispute
+      tags: [Billing Adjustments]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ticket_id, customer_id, billing_officer_id, old_balance, adjusted_balance, adjustment_amount, root_cause_category, root_cause_note]
+              properties:
+                ticket_id: {type: string}
+                customer_id: {type: string}
+                billing_officer_id: {type: string}
+                old_balance: {type: number}
+                adjusted_balance: {type: number}
+                adjustment_amount: {type: number}
+                root_cause_category: {type: string}
+                root_cause_note: {type: string}
+      responses:
+        '201':
+          description: Adjustment proposed and awaiting Head approval
+
+  /billing/adjustments/{id}/decide:
+    post:
+      summary: Head of Commercial Operations Approval Gate
+      tags: [Billing Adjustments]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [head_commercial_ops_id, approve, notes]
+              properties:
+                head_commercial_ops_id: {type: string}
+                approve: {type: boolean}
+                notes: {type: string}
+      responses:
+        '200':
+          description: Decision applied and ticket reverted to ATTENDED_TO
+
+  /billing/revenue-protection/scan:
+    post:
+      summary: Run AI Anomaly Telemetry Scan for Bypass & Churn Risk
+      tags: [Revenue Protection AI]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer_or_dt_id]
+              properties:
+                customer_or_dt_id: {type: string}
+                entity_type: {type: string}
+                dt_bulk_kwh: {type: number}
+                sum_metered_kwh: {type: number}
+                vending_drop_pct: {type: number}
+                feeder_energized: {type: boolean}
+                outage_count: {type: integer}
+                purchase_drop_pct: {type: number}
+      responses:
+        '201':
+          description: Anomaly detected and alert generated
+        '200':
+          description: Telemetry clean, no anomaly detected
+
+  /billing/revenue-protection/alerts/{id}/review:
+    post:
+      summary: Update Investigation Status & Unit on Revenue Protection Alert
+      tags: [Revenue Protection AI]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                assigned_unit_id: {type: string}
+                investigation_notes: {type: string}
+                status: {type: string}
+      responses:
+        '200':
+          description: Alert updated
+
+  /executive/dashboard:
+    get:
+      summary: Retrieve Live Cross-Departmental C-Suite Intelligence Pulse
+      tags: [Executive Command]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Real-time generation, dispatch, billing and audit summary
+
+  /executive/snapshots:
+    post:
+      summary: Capture Operational Telemetry Snapshot
+      tags: [Executive Command]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [snapshot_date, shift_window, captured_by_staff_id]
+              properties:
+                snapshot_date: {type: string}
+                shift_window: {type: string}
+                total_generation_mw: {type: number}
+                tcn_grid_intake_mw: {type: number}
+                total_system_load_mw: {type: number}
+                feeders_in_service_count: {type: integer}
+                feeders_out_fault_count: {type: integer}
+                feeders_out_ptw_count: {type: integer}
+                feeders_out_rationing_count: {type: integer}
+                total_revenue_collected: {type: number}
+                prepaid_revenue_share_pct: {type: number}
+                unresolved_theft_alerts_count: {type: integer}
+                unresolved_churn_alerts_count: {type: integer}
+                audit_pending_procurements_count: {type: integer}
+                unreturned_scrap_count: {type: integer}
+                notes: {type: string}
+                captured_by_staff_id: {type: string}
+      responses:
+        '201':
+          description: Snapshot captured successfully
+    get:
+      summary: List Historical Operational Telemetry Snapshots
+      tags: [Executive Command]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: limit
+          schema: {type: integer}
+      responses:
+        '200':
+          description: List of operational snapshots
+
+  /executive/snapshots/latest:
+    get:
+      summary: Retrieve Latest Operational Snapshot
+      tags: [Executive Command]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Latest operational snapshot
+        '404':
+          description: No snapshot found
+
+  /executive/actions:
+    post:
+      summary: Enqueue Pending C-Suite Action Item
+      tags: [Executive Command]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action_type, target_role, source_entity_id, source_entity_ref, source_department, summary]
+              properties:
+                action_type: {type: string}
+                target_role: {type: string}
+                source_entity_id: {type: string}
+                source_entity_ref: {type: string}
+                source_department: {type: string}
+                summary: {type: string}
+                amount: {type: number}
+                priority: {type: string}
+      responses:
+        '201':
+          description: Action item enqueued
+        '409':
+          description: Action item already exists for source entity ref
+    get:
+      summary: List Action Items Filtered by Target Role and Status
+      tags: [Executive Command]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: target_role
+          schema: {type: string}
+        - in: query
+          name: status
+          schema: {type: string}
+      responses:
+        '200':
+          description: List of action items
+
+  /executive/actions/{id}/decide:
+    post:
+      summary: Digital Signature Approval or Rejection with Role Segregation
+      tags: [Executive Command]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decided_by_staff_id, approve, notes]
+              properties:
+                decided_by_staff_id: {type: string}
+                approve: {type: boolean}
+                notes: {type: string}
+      responses:
+        '200':
+          description: Action item decided
+        '403':
+          description: Unauthorized executive role for action type
+        '404':
+          description: Action item not found
+        '409':
+          description: Action item already decided
+
+  /executive/predictive/hydro:
+    post:
+      summary: Evaluate Water Reservoir Telemetry & Generation Outlook
+      tags: [Predictive Maintenance]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset_id]
+              properties:
+                asset_id: {type: string}
+                inflow_m3s: {type: number}
+                discharge_m3s: {type: number}
+                current_head_m: {type: number}
+                turbine_efficiency: {type: number}
+                forecast_days: {type: integer}
+      responses:
+        '201':
+          description: Prognosis evaluated and trigger raised
+
+  /executive/predictive/generator:
+    post:
+      summary: Evaluate Turbine Generator Mechanical & Thermal Health
+      tags: [Predictive Maintenance]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset_id]
+              properties:
+                asset_id: {type: string}
+                bearing_vibration_mm_s: {type: number}
+                winding_temp_c: {type: number}
+                lube_oil_pressure_bar: {type: number}
+                run_hours_since_overhaul: {type: number}
+                unit_head_id: {type: string}
+                team_lead_id: {type: string}
+      responses:
+        '201':
+          description: Prognosis evaluated; automated work order created if critical
+
+  /executive/predictive/transformer:
+    post:
+      summary: Evaluate Condition-Based Maintenance (CBM) for Transformers
+      tags: [Predictive Maintenance]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset_id]
+              properties:
+                asset_id: {type: string}
+                load_pct: {type: number}
+                top_oil_temp_c: {type: number}
+                fuse_blows_30_days: {type: integer}
+                unit_head_id: {type: string}
+                team_lead_id: {type: string}
+      responses:
+        '201':
+          description: Transformer CBM evaluated; inspection work order created if critical
+
+  /executive/predictive/feeder:
+    post:
+      summary: Evaluate Feeder Fault Trip Probability & Vegetation Patrol Risk
+      tags: [Predictive Maintenance]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset_id]
+              properties:
+                asset_id: {type: string}
+                trip_count_30_days: {type: integer}
+                fault_density_per_km: {type: number}
+                days_since_last_patrol: {type: number}
+                storm_forecast: {type: boolean}
+                unit_head_id: {type: string}
+                team_lead_id: {type: string}
+      responses:
+        '201':
+          description: Feeder reliability evaluated; patrol work order created if critical
+
+  /executive/predictive/triggers:
+    get:
+      summary: List Predictive Maintenance Alarms
+      tags: [Predictive Maintenance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema: {type: string}
+        - in: query
+          name: model_name
+          schema: {type: string}
+        - in: query
+          name: limit
+          schema: {type: integer}
+      responses:
+        '200':
+          description: List of predictive triggers
+
+  /executive/predictive/triggers/{id}/ack:
+    post:
+      summary: Acknowledge Predictive Maintenance Trigger Alarm
+      tags: [Predictive Maintenance]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [staff_id]
+              properties:
+                staff_id: {type: string}
+                status: {type: string}
+      responses:
+        '200':
+          description: Trigger acknowledged
+        '404':
+          description: Trigger not found
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
