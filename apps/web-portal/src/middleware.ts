@@ -11,12 +11,13 @@ import { PrimaryRole } from "./types/auth";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Allow public assets and login route
+  // 1. Allow public assets, home page, and login route
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
     pathname.startsWith("/static") ||
     pathname === "/login" ||
+    pathname === "/" ||
     pathname === "/favicon.ico"
   ) {
     return NextResponse.next();
