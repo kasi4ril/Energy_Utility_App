@@ -23,7 +23,7 @@ export const ZoneC_ActionQueue: React.FC<ActionQueueProps> = ({
 
   const filteredTickets = tickets.filter((t) => {
     if (filter === "ATTENDED_TO") return t.status === "ATTENDED_TO";
-    if (filter === "OPEN") return t.status === "OPEN" || t.status === "DISPATCHED";
+    if (filter === "OPEN") return t.status === "LOGGED" || t.status === "ROUTED";
     return true;
   });
 

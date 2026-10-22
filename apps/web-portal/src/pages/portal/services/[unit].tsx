@@ -1,6 +1,6 @@
 /**
  * Next.js Page: Services & Maintenance Department Portals (/portal/services/[unit]).
- * Dynamic shell for Feeder, Transformer, and Metering Unit Heads.
+ * Enterprise Multi-Task Shell for Feeder, Transformer, and Metering Unit Heads.
  */
 
 import React, { useState, useEffect } from "react";
@@ -9,7 +9,11 @@ import { useRouter } from "next/router";
 import { TopCommandBar } from "../../../components/shell/TopCommandBar";
 import { GridAssistantDock } from "../../../components/shell/GridAssistantDock";
 import { WorkNotesDrawer } from "../../../components/shell/WorkNotesDrawer";
-import { ZoneB_DashboardRibbon } from "../../../features/services-maint/ZoneB_DashboardRibbon";
+import { ServicesMaintHeader } from "../../../features/services-maint/ServicesMaintHeader";
+import {
+  ServicesMaintNavigation,
+  ServicesTask,
+} from "../../../features/services-maint/ServicesMaintNavigation";
 import { ZoneC_ActionQueue } from "../../../features/services-maint/ZoneC_ActionQueue";
 import { ZoneC_IntakeForm } from "../../../features/services-maint/ZoneC_IntakeForm";
 import { fetchWorkOrders, verifyProofOfWork, WorkOrderDTO } from "../../../features/services-maint/api";
@@ -23,6 +27,7 @@ export default function ServicesUnitPage() {
   const unitStr = typeof unit === "string" ? unit : "feeder";
 
   const [claims, setClaims] = useState<AuthClaims | null>(null);
+  const [activeTask, setActiveTask] = useState<ServicesTask>("work-orders");
   const [orders, setOrders] = useState<WorkOrderDTO[]>([]);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<WorkOrderDTO | null>(null);
@@ -33,22 +38,27 @@ export default function ServicesUnitPage() {
     metering: "METERING_SERVICES",
   };
 
+  const loadOrders = async () => {
+    const targetUnitType = unitTypeMap[unitStr] || "FEEDER_MAINT";
+    const data = await fetchWorkOrders(targetUnitType);
+    setOrders(data);
+  };
+
   useEffect(() => {
     const token = apiClient.getToken();
     if (token) setClaims(parseTokenClaims(token));
-
-    const loadOrders = async () => {
-      const targetUnitType = unitTypeMap[unitStr] || "FEEDER_MAINT";
-      const data = await fetchWorkOrders(targetUnitType);
-      setOrders(data);
-    };
     if (unit) loadOrders();
   }, [unit, unitStr]);
 
   const handleVerifyProof = async (orderId: string) => {
     if (!claims) return;
     try {
-      await verifyProofOfWork(orderId, true, "Unit Head verified GPS within tolerance and approved before/after photos.", claims.staff_id);
+      await verifyProofOfWork(
+        orderId,
+        true,
+        "Unit Head verified GPS within tolerance and approved before/after photos.",
+        claims.staff_id
+      );
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: "ATTENDED_TO" } : o))
       );
@@ -58,43 +68,74 @@ export default function ServicesUnitPage() {
     }
   };
 
-  const title = `Services & Maintenance &bull; ${unitStr.toUpperCase()} UNIT`;
+  const unitTitle = `${unitStr.toUpperCase()} UNIT`;
 
   return (
     <>
       <Head>
-        <title>{title}</title>
+        <title>NESCO Services &bull; {unitTitle}</title>
       </Head>
 
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
         <TopCommandBar
           claims={claims}
-          departmentTitle={`Maintenance &bull; ${unitStr.toUpperCase()}`}
+          departmentTitle={`Field Engineering & Maintenance &bull; ${unitTitle}`}
           onToggleChat={() => setIsChatOpen(!isChatOpen)}
         />
 
-        <main className="flex-1 p-6 space-y-6 max-w-7xl w-full mx-auto">
-          <ZoneB_DashboardRibbon unitTitle={`${unitStr.toUpperCase()} Unit`} />
+        <main className="flex-1 p-4 sm:p-6 space-y-6 max-w-7xl w-full mx-auto">
+          {/* Executive Overview & Regulatory Mission */}
+          <ServicesMaintHeader
+            unitTitle={unitTitle}
+            orderCount={orders.length}
+            onRefresh={loadOrders}
+          />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[500px]">
-            <div className="lg:col-span-8">
+          {/* Operational Task Navigation Pane */}
+          <ServicesMaintNavigation
+            activeTask={activeTask}
+            onSelectTask={(task) => setActiveTask(task)}
+            orderCount={orders.length}
+          />
+
+          {/* Dedicated Task Workspace Views */}
+          <div className="transition-all duration-200">
+            {activeTask === "work-orders" && (
               <ZoneC_ActionQueue
                 orders={orders}
                 onSelectOrder={(o) => setSelectedOrder(o)}
                 onVerifyProof={handleVerifyProof}
               />
-            </div>
-            <div className="lg:col-span-4">
-              <ZoneC_IntakeForm
-                staffId={claims?.staff_id || "STAFF-MAINT-01"}
-                unitType={unitTypeMap[unitStr] || "FEEDER_MAINT"}
-                onSuccess={async () => {
-                  const targetUnitType = unitTypeMap[unitStr] || "FEEDER_MAINT";
-                  const updated = await fetchWorkOrders(targetUnitType);
-                  setOrders(updated);
-                }}
+            )}
+
+            {activeTask === "create-order" && (
+              <div className="max-w-2xl mx-auto">
+                <ZoneC_IntakeForm
+                  staffId={claims?.staff_id || "STAFF-MAINT-01"}
+                  unitType={unitTypeMap[unitStr] || "FEEDER_MAINT"}
+                  onSuccess={loadOrders}
+                />
+              </div>
+            )}
+
+            {activeTask === "proof-verification" && (
+              <ZoneC_ActionQueue
+                orders={orders}
+                onSelectOrder={(o) => setSelectedOrder(o)}
+                onVerifyProof={handleVerifyProof}
               />
-            </div>
+            )}
+
+            {activeTask === "unit-analytics" && (
+              <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-6 text-center space-y-3">
+                <h3 className="text-sm font-bold text-white">Unit Maintenance Performance &amp; MTTR</h3>
+                <p className="text-xs text-slate-400">
+                  Average Time to Repair: <span className="font-bold text-emerald-400">2.8 hrs</span> &bull; 
+                  Active Crews on Duty: <span className="font-bold text-sky-400">4 Crews</span> &bull;
+                  PTW Safety Compliance: <span className="font-bold text-emerald-400">100%</span>
+                </p>
+              </div>
+            )}
           </div>
         </main>
 
@@ -118,4 +159,3 @@ export default function ServicesUnitPage() {
     </>
   );
 }
-

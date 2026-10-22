@@ -4,7 +4,8 @@
  */
 
 import React, { useState } from "react";
-import { onboardCustomer, CustomerOnboardDTO } from "./api";
+import { onboardCustomer } from "./api";
+import { KYCOnboardingPayload, TariffBand, BuildingClass } from "./types";
 
 interface IntakeFormProps {
   staffId: string;
@@ -12,10 +13,14 @@ interface IntakeFormProps {
 }
 
 export const ZoneC_IntakeForm: React.FC<IntakeFormProps> = ({ staffId, onSuccess }) => {
-  const [form, setForm] = useState<Partial<CustomerOnboardDTO>>({
+  const [form, setForm] = useState<Partial<KYCOnboardingPayload>>({
     tariff_band: "BAND_A",
     feeder_line_code: "FDR-33KV-VOM",
-    dt_station_code: "TX-DT-500KVA-MARKET",
+    transformer_id: "TX-DT-500KVA-MARKET",
+    building_class: "RESIDENTIAL",
+    meter_type: "PREPAID_STS",
+    latitude: 9.75,
+    longitude: 8.85,
   });
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState<{ text: string; type: "success" | "error" } | null>(null);
@@ -27,14 +32,15 @@ export const ZoneC_IntakeForm: React.FC<IntakeFormProps> = ({ staffId, onSuccess
 
     try {
       await onboardCustomer({
-        national_id_nin: form.national_id_nin || "NIN-2026-0001",
+        nin: form.nin || "NIN-2026-0001",
         full_name: form.full_name || "",
-        phone_number: form.phone_number || "",
-        account_number: form.account_number || `ACC-${Date.now().toString().slice(-6)}`,
-        meter_number: form.meter_number || `MTR-${Date.now().toString().slice(-6)}`,
+        phone: form.phone || "",
+        meter_serial: form.meter_serial || `MTR-${Date.now().toString().slice(-6)}`,
+        meter_type: form.meter_type || "PREPAID_STS",
         feeder_line_code: form.feeder_line_code || "FDR-33KV-VOM",
-        dt_station_code: form.dt_station_code || "TX-DT-500KVA",
-        tariff_band: form.tariff_band || "BAND_A",
+        transformer_id: form.transformer_id || "TX-DT-500KVA",
+        tariff_band: (form.tariff_band as TariffBand) || "BAND_A",
+        building_class: (form.building_class as BuildingClass) || "RESIDENTIAL",
         service_address: form.service_address || "",
         latitude: form.latitude || 9.75,
         longitude: form.longitude || 8.85,
@@ -45,7 +51,7 @@ export const ZoneC_IntakeForm: React.FC<IntakeFormProps> = ({ staffId, onSuccess
       setForm({
         tariff_band: "BAND_A",
         feeder_line_code: "FDR-33KV-VOM",
-        dt_station_code: "TX-DT-500KVA-MARKET",
+        transformer_id: "TX-DT-500KVA-MARKET",
       });
       if (onSuccess) onSuccess();
     } catch (err: any) {
@@ -59,7 +65,7 @@ export const ZoneC_IntakeForm: React.FC<IntakeFormProps> = ({ staffId, onSuccess
     <div className="bg-slate-800/90 border border-slate-700/80 rounded-xl p-5 shadow-lg flex flex-col h-full">
       <div className="pb-3 border-b border-slate-700/60 mb-4">
         <h3 className="text-sm font-bold text-white tracking-wide">KYC Customer Onboarding</h3>
-        <p className="text-xs text-slate-400 mt-0.5">PostGIS DT Radius & Meter Anchor Form</p>
+        <p className="text-xs text-slate-400 mt-0.5">PostGIS DT Radius &amp; Meter Anchor Form</p>
       </div>
 
       {msg && (
@@ -93,8 +99,8 @@ export const ZoneC_IntakeForm: React.FC<IntakeFormProps> = ({ staffId, onSuccess
             <input
               type="text"
               required
-              value={form.phone_number || ""}
-              onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
+              value={form.phone || ""}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
               placeholder="08031234567"
               className="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
@@ -104,8 +110,8 @@ export const ZoneC_IntakeForm: React.FC<IntakeFormProps> = ({ staffId, onSuccess
             <input
               type="text"
               required
-              value={form.national_id_nin || ""}
-              onChange={(e) => setForm({ ...form, national_id_nin: e.target.value })}
+              value={form.nin || ""}
+              onChange={(e) => setForm({ ...form, nin: e.target.value })}
               placeholder="12345678901"
               className="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
@@ -127,7 +133,7 @@ export const ZoneC_IntakeForm: React.FC<IntakeFormProps> = ({ staffId, onSuccess
             <label className="block text-[11px] font-semibold text-slate-300 mb-1">Tariff Band</label>
             <select
               value={form.tariff_band || "BAND_A"}
-              onChange={(e) => setForm({ ...form, tariff_band: e.target.value })}
+              onChange={(e) => setForm({ ...form, tariff_band: e.target.value as TariffBand })}
               className="w-full px-3 py-2 rounded bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
             >
               <option value="BAND_A">Band A (20+ hrs)</option>
@@ -160,4 +166,3 @@ export const ZoneC_IntakeForm: React.FC<IntakeFormProps> = ({ staffId, onSuccess
     </div>
   );
 };
-
