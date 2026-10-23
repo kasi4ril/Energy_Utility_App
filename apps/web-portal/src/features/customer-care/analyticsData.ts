@@ -63,48 +63,46 @@ export const YEARLY_METRICS_DATA: Record<string, PeriodMetrics> = {
   },
 };
 
-export const QUARTERLY_METRICS_DATA: Record<string, PeriodMetrics> = {
-  Q1: {
-    period: "QUARTERLY",
-    label: "Q1: January, February, March (2026)",
-    lodged_count: 980,
-    resolved_count: 915,
-    unresolved_count: 65,
-    new_customers_count: 320,
-    resolved_pct: 93.4,
-    unresolved_pct: 6.6,
-  },
-  Q2: {
-    period: "QUARTERLY",
-    label: "Q2: April, May, June (2026)",
-    lodged_count: 1060,
-    resolved_count: 992,
-    unresolved_count: 68,
-    new_customers_count: 365,
-    resolved_pct: 93.6,
-    unresolved_pct: 6.4,
-  },
-  Q3: {
-    period: "QUARTERLY",
-    label: "Q3: July, August, September (2026)",
-    lodged_count: 1098,
-    resolved_count: 1041,
-    unresolved_count: 57,
-    new_customers_count: 393,
-    resolved_pct: 94.8,
-    unresolved_pct: 5.2,
-  },
-  Q4: {
-    period: "QUARTERLY",
-    label: "Q4: October, November, December (2026)",
-    lodged_count: 1042,
-    resolved_count: 982,
-    unresolved_count: 60,
-    new_customers_count: 342,
-    resolved_pct: 94.2,
-    unresolved_pct: 5.8,
-  },
-};
+export function getTicketHistogramData(
+  year: string = "2026",
+  monthKey: string = "10",
+  day: string = "23"
+): { label: string; lodged: number; resolved: number }[] {
+  if (monthKey === "ALL") {
+    const mNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const yRatio = (YEARLY_METRICS_DATA[year]?.lodged_count || 4180) / 4180;
+    return mNames.map((m, idx) => {
+      const k = (idx + 1).toString().padStart(2, "0");
+      const base = MONTHLY_METRICS_DATA[k] || { lodged_count: 340, resolved_count: 310 };
+      return {
+        label: m,
+        lodged: Math.round(base.lodged_count * yRatio),
+        resolved: Math.round(base.resolved_count * yRatio),
+      };
+    });
+  }
+
+  if (day === "ALL") {
+    const mData = getMonthMetricsForYear(monthKey, year);
+    const avgLodged = Math.round(mData.lodged_count / 4);
+    const avgResolved = Math.round(mData.resolved_count / 4);
+    return [
+      { label: "W1 (1-7)", lodged: avgLodged - 4, resolved: avgResolved - 3 },
+      { label: "W2 (8-14)", lodged: avgLodged + 2, resolved: avgResolved + 1 },
+      { label: "W3 (15-21)", lodged: avgLodged + 5, resolved: avgResolved + 4 },
+      { label: "W4 (22-end)", lodged: avgLodged - 3, resolved: avgResolved - 2 },
+    ];
+  }
+
+  const dayNum = parseInt(day, 10) || 23;
+  const dMetrics = getDailyMetricsForMonth(monthKey, dayNum, year);
+  const intervals = ["08h", "10h", "12h", "14h", "16h", "18h"];
+  return intervals.map((time, i) => {
+    const l = Math.max(1, Math.round(dMetrics.lodged_count / 6) + (i % 2 === 0 ? 1 : -1));
+    const r = Math.max(0, l - (i === 4 || i === 5 ? 1 : 0));
+    return { label: time, lodged: l, resolved: r };
+  });
+}
 
 export const MONTHLY_METRICS_DATA: Record<string, PeriodMetrics> = {
   "01": { period: "MONTHLY", label: "January 2026", lodged_count: 310, resolved_count: 288, unresolved_count: 22, new_customers_count: 102, resolved_pct: 92.9, unresolved_pct: 7.1 },
@@ -120,6 +118,37 @@ export const MONTHLY_METRICS_DATA: Record<string, PeriodMetrics> = {
   "11": { period: "MONTHLY", label: "November 2026", lodged_count: 330, resolved_count: 315, unresolved_count: 15, new_customers_count: 98, resolved_pct: 95.5, unresolved_pct: 4.5 },
   "12": { period: "MONTHLY", label: "December 2026", lodged_count: 364, resolved_count: 345, unresolved_count: 19, new_customers_count: 129, resolved_pct: 94.8, unresolved_pct: 5.2 },
 };
+
+export function getMonthMetricsForYear(monthKey: string = "10", year: string = "2026"): PeriodMetrics {
+  const base = MONTHLY_METRICS_DATA[monthKey] || MONTHLY_METRICS_DATA["10"];
+  const monthNames: Record<string, string> = {
+    "01": "January", "02": "February", "03": "March", "04": "April",
+    "05": "May", "06": "June", "07": "July", "08": "August",
+    "09": "September", "10": "October", "11": "November", "12": "December",
+  };
+  const mName = monthNames[monthKey] || "October";
+  if (year === "2026") {
+    return base;
+  }
+  const yearMetrics = YEARLY_METRICS_DATA[year] || YEARLY_METRICS_DATA["2025"];
+  const ratio = yearMetrics.lodged_count / 4180;
+  const lodged = Math.round(base.lodged_count * ratio);
+  const unresolved = Math.max(5, Math.round(base.unresolved_count * ratio));
+  const resolved = lodged - unresolved;
+  const newCust = Math.round(base.new_customers_count * ratio);
+  const resolvedPct = parseFloat(((resolved / lodged) * 100).toFixed(1));
+  const unresolvedPct = parseFloat((100 - resolvedPct).toFixed(1));
+  return {
+    period: "MONTHLY",
+    label: `${mName} ${year} Monthly Report`,
+    lodged_count: lodged,
+    resolved_count: resolved,
+    unresolved_count: unresolved,
+    new_customers_count: newCust,
+    resolved_pct: resolvedPct,
+    unresolved_pct: unresolvedPct,
+  };
+}
 
 export function getDailyMetricsForMonth(monthKey: string = "10", day: number = 23, year: string = "2026"): PeriodMetrics {
   const monthNames: Record<string, string> = {
@@ -177,51 +206,15 @@ export const PERIOD_METRICS_MAP: Record<AnalyticsPeriod, PeriodMetrics> = {
     unresolved_pct: 11.6,
   },
   MONTHLY: MONTHLY_METRICS_DATA["10"],
-  QUARTERLY: QUARTERLY_METRICS_DATA.Q4,
+  QUARTERLY: YEARLY_METRICS_DATA["2026"],
   YEARLY: YEARLY_METRICS_DATA["2026"],
 };
 
 export const MONTHLY_BILLING_VENDING_DATA: Record<string, BillingVendingStats> = {
-  "2026-10": {
-    month: "October 2026 (Present Month)",
-    postpaid_paid_count: 1420,
-    postpaid_paid_amount: 42600000,
-    postpaid_unpaid_count: 380,
-    postpaid_unpaid_amount: 11400000,
-    prepaid_vended_count: 8450,
-    prepaid_vended_amount: 84500000,
-    prepaid_unvended_count: 1120,
-  },
-  "2026-09": {
-    month: "September 2026 (Past Month)",
-    postpaid_paid_count: 1390,
-    postpaid_paid_amount: 41700000,
-    postpaid_unpaid_count: 410,
-    postpaid_unpaid_amount: 12300000,
-    prepaid_vended_count: 8210,
-    prepaid_vended_amount: 82100000,
-    prepaid_unvended_count: 1360,
-  },
-  "2026-08": {
-    month: "August 2026 (Past Month)",
-    postpaid_paid_count: 1350,
-    postpaid_paid_amount: 40500000,
-    postpaid_unpaid_count: 450,
-    postpaid_unpaid_amount: 13500000,
-    prepaid_vended_count: 7980,
-    prepaid_vended_amount: 79800000,
-    prepaid_unvended_count: 1590,
-  },
-  "2026-07": {
-    month: "July 2026 (Past Month)",
-    postpaid_paid_count: 1310,
-    postpaid_paid_amount: 39300000,
-    postpaid_unpaid_count: 490,
-    postpaid_unpaid_amount: 14700000,
-    prepaid_vended_count: 7800,
-    prepaid_vended_amount: 78000000,
-    prepaid_unvended_count: 1770,
-  },
+  "2026-10": { month: "October 2026 (Present Month)", postpaid_paid_count: 1420, postpaid_paid_amount: 42600000, postpaid_unpaid_count: 380, postpaid_unpaid_amount: 11400000, prepaid_vended_count: 8450, prepaid_vended_amount: 84500000, prepaid_unvended_count: 1120 },
+  "2026-09": { month: "September 2026 (Past Month)", postpaid_paid_count: 1390, postpaid_paid_amount: 41700000, postpaid_unpaid_count: 410, postpaid_unpaid_amount: 12300000, prepaid_vended_count: 8210, prepaid_vended_amount: 82100000, prepaid_unvended_count: 1360 },
+  "2026-08": { month: "August 2026 (Past Month)", postpaid_paid_count: 1350, postpaid_paid_amount: 40500000, postpaid_unpaid_count: 450, postpaid_unpaid_amount: 13500000, prepaid_vended_count: 7980, prepaid_vended_amount: 79800000, prepaid_unvended_count: 1590 },
+  "2026-07": { month: "July 2026 (Past Month)", postpaid_paid_count: 1310, postpaid_paid_amount: 39300000, postpaid_unpaid_count: 490, postpaid_unpaid_amount: 14700000, prepaid_vended_count: 7800, prepaid_vended_amount: 78000000, prepaid_unvended_count: 1770 },
 };
 
 export const METER_INSTALLATION_STATS: MeterCategoryStats = {
@@ -240,6 +233,45 @@ export const METER_INSTALLATION_STATS: MeterCategoryStats = {
     { period_label: "Week 41 (Past)", residential: 60, md: 4, industrial: 15, total: 79 },
   ],
 };
+
+export function getMeterInstallationData(year: string = "2026", monthKey: string = "10") {
+  const yRatio = year === "2026" ? 1.0 : year === "2025" ? 0.92 : year === "2024" ? 0.85 : 0.78;
+  const mNames: Record<string, string> = { "01": "Jan", "02": "Feb", "03": "Mar", "04": "Apr", "05": "May", "06": "Jun", "07": "Jul", "08": "Aug", "09": "Sep", "10": "Oct", "11": "Nov", "12": "Dec" };
+
+  if (monthKey === "ALL") {
+    const total = Math.round(3850 * yRatio);
+    const res = Math.round(total * 0.754);
+    const md = Math.round(total * 0.057);
+    const ind = total - res - md;
+    const quarters = [
+      { label: `Q1 ${year}`, residential: Math.round(res * 0.23), md: Math.round(md * 0.24), industrial: Math.round(ind * 0.22) },
+      { label: `Q2 ${year}`, residential: Math.round(res * 0.26), md: Math.round(md * 0.25), industrial: Math.round(ind * 0.27) },
+      { label: `Q3 ${year}`, residential: Math.round(res * 0.28), md: Math.round(md * 0.26), industrial: Math.round(ind * 0.26) },
+      { label: `Q4 ${year}`, residential: Math.round(res * 0.23), md: Math.round(md * 0.25), industrial: Math.round(ind * 0.25) },
+    ];
+    return {
+      total_installed: total, residential_count: res, md_count: md, industrial_count: ind,
+      period_label: `Annual Rollout ${year}`,
+      chart_data: quarters.map(q => ({ ...q, total: q.residential + q.md + q.industrial })),
+    };
+  }
+
+  const mTotal = Math.round(320 * yRatio);
+  const mRes = Math.round(mTotal * 0.75);
+  const mMd = Math.round(mTotal * 0.06);
+  const mInd = mTotal - mRes - mMd;
+  const weeks = [
+    { label: "W1 (1-7)", residential: Math.round(mRes * 0.24), md: Math.round(mMd * 0.25), industrial: Math.round(mInd * 0.23) },
+    { label: "W2 (8-14)", residential: Math.round(mRes * 0.26), md: Math.round(mMd * 0.25), industrial: Math.round(mInd * 0.27) },
+    { label: "W3 (15-21)", residential: Math.round(mRes * 0.27), md: Math.round(mMd * 0.25), industrial: Math.round(mInd * 0.25) },
+    { label: "W4 (22+)", residential: Math.round(mRes * 0.23), md: Math.round(mMd * 0.25), industrial: Math.round(mInd * 0.25) },
+  ];
+  return {
+    total_installed: mTotal, residential_count: mRes, md_count: mMd, industrial_count: mInd,
+    period_label: `${mNames[monthKey] || "Oct"} ${year} Rollout`,
+    chart_data: weeks.map(w => ({ ...w, total: w.residential + w.md + w.industrial })),
+  };
+}
 
 const NIMC_REGISTRY: Record<string, { name: string; gender: string; dob: string }> = {
   "24891029481": { name: "IBRAHIM DANLADI GYANG", gender: "MALE", dob: "1984-06-12" },

@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { AuthClaims } from "../../types/auth";
-import { Clock, ShieldCheck, Bell, Sparkles, BarChart3, Home } from "lucide-react";
+import { Clock, ShieldCheck, Bell, Sparkles, BarChart3, ArrowLeft } from "lucide-react";
 
 interface ZoneAProps {
   claims: AuthClaims | null;
@@ -101,14 +101,14 @@ export function ZoneA_ThinTopHeaderBar({
 
       {/* Right: Navigation Buttons (Shifted Right), Staff Attribution Badge & Alerts */}
       <div className="flex items-center space-x-2.5">
-        {/* Main Landing Page Button */}
+        {/* Back Button (Renamed from Landing Page, Shifted Right) */}
         <Link
           href="/"
           className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors shadow-sm"
-          title="Return to Main Landing Page"
+          title="Back to Main Landing Page"
         >
-          <Home className="w-3.5 h-3.5 text-blue-400" />
-          <span className="hidden sm:inline">Landing Page</span>
+          <ArrowLeft className="w-3.5 h-3.5 text-blue-400" />
+          <span>Back</span>
         </Link>
 
         {/* Central Daily Analytics Button (Shifted Right) */}

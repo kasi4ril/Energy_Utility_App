@@ -8,7 +8,7 @@ import React from "react";
 import Link from "next/link";
 import { AuthClaims } from "../../types/auth";
 import { logoutStaff } from "../../features/auth/api";
-import { Home, BarChart3 } from "lucide-react";
+import { ArrowLeft, BarChart3 } from "lucide-react";
 
 interface TopCommandBarProps {
   claims: AuthClaims | null;
@@ -92,14 +92,14 @@ export const TopCommandBar: React.FC<TopCommandBarProps> = ({
       </div>
 
       <div className="flex items-center space-x-2.5 sm:space-x-3">
-        {/* Main Landing Page Button */}
+        {/* Back Button (Renamed from Landing Page, Shifted Right) */}
         <Link
           href="/"
           className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors shadow-sm"
-          title="Return to Main Landing Page"
+          title="Back to Main Landing Page"
         >
-          <Home className="w-3.5 h-3.5 text-blue-400" />
-          <span className="hidden sm:inline">Landing Page</span>
+          <ArrowLeft className="w-3.5 h-3.5 text-blue-400" />
+          <span className="hidden sm:inline">Back</span>
         </Link>
 
         {/* Central Daily Analytics Button (Shifted towards Right) */}

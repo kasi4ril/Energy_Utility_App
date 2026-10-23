@@ -8,26 +8,21 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), adh
 ## [1.1.0] - 2026-10-23
 
 ### Added - Enterprise Observations & Blueprint Customer Care Harmonization
-- **Complaints & Customer Growth Query Engine (`AnalyticsPeriodQueryCard.tsx`, `analyticsData.ts`):**
-  - **Yearly Selector**: Interactive historical query options for recorded operational data (`2026 YTD`, `2025 Audit`, `2024 Audit`, `2023 Centenary`).
-  - **Quarterly Selector**: Dedicated options for Quarters 1 through 4 with explicit month groupings:
-    - `Q1` = January, February, March
-    - `Q2` = April, May, June
-    - `Q3` = July, August, September
-    - `Q4` = October, November, December
-  - **Monthly Selector**: Full 12-month spectrum buttons from `January` through `December` (2026).
-  - **Daily Query Filter**: Dual interactive month selector (Jan–Dec) and day selector (Days 1–31) with quick "Today (23 Oct 2026)" reset button, providing granular daily telemetry for any given month.
-  - **Core Metric Display**: Across all period and sub-period queries, dynamically renders:
-    - **Total Complaints Lodged** (inflow tickets count)
-    - **Tickets Resolved** (confirmed closures count)
-    - **Active Unresolved** (backlog and pending tickets count)
-    - **New Customers Onboarded** (NIN-verified registrations)
-    - **Resolution Efficiency Bar**: Real-time dual-color visual progress gauge comparing resolved vs unresolved percentages against the NERC regulatory $\ge 80.0\%$ closure rate.
-- **Customer Revenue, Vending & Meter Fleet Analytics (`BillingVendingMeterAnalyticsCard.tsx`):**
-  - Month-by-month selector (present and historical months: Oct, Sep, Aug, Jul 2026).
+- **Complaints & Customer Growth Query Engine (Option A Executive Suite - `AnalyticsPeriodQueryCard.tsx`, `analyticsData.ts`):**
+  - **Year Dropdown**: Hierarchical dropdown selector for recorded database years (`2026 Current Operating Year`, `2025 Audit`, `2024 Audit`, `2023 Centenary`).
+  - **Month Dropdown**: Full Year Overview (`ALL`) or individual months (`01 - January` through `12 - December`).
+  - **Day Dropdown**: Full Month Summary (`ALL`) or individual day reports (`Day 01` through `Day 31`).
+  - **Removed Quarterly Filter**: Streamlined hierarchical Year -> Month -> Day drilldown.
+  - **Donut Chart Gauge**: Recharts-powered interactive donut chart visualizing Tickets Resolved (Emerald) vs Active Backlog (Amber) with dynamic center percentage and NERC regulatory compliance badge.
+  - **Dual Grouped Bar Histogram**: Recharts-powered inflow vs resolution pace histogram dynamically adapting across months (for year query), weeks (for month query), or hourly shift intervals (for daily query).
+  - **Quick Shortcuts**: One-click preset pills (`⚡ Today 23 Oct 2026`, `📅 Oct 2026 Month`, `📊 2026 Full Year`).
+  - **Core Metric Display**: Total Complaints Lodged, Tickets Resolved, Active Unresolved, and NIN-verified New Customers registered.
+- **Customer Revenue, Vending & Meter Fleet Analytics (`BillingVendingMeterAnalyticsCard.tsx`, `analyticsData.ts`):**
+  - **Interactive Meters Installed Query**: Added Year dropdown (`2023-2026`) and Month dropdown (`All Months`, `01-12`) to the Meters Installed side.
+  - **Stacked Category Bar Chart**: Multi-color stacked bar chart visualizing deployment across Residential (R2 - Teal), MD Customers (Indigo), and Industrial (Amber) for any queried year/month.
   - Postpaid Paid vs Unpaid/Arrears breakdown with monetary totals.
   - Prepaid STS Vended vs Zero-Vend/Flagged accounts with token issuance tallies.
-  - Meter Installation Milestone tracker: 14,850 total installed fleet categorized by Residential (R2), Maximum Demand (MD), and Industrial (D1/C1), filterable by monthly and weekly pace.
+  - Total installed fleet tracking (14,850 meters) with dynamic period energized totals.
 - **Distribution Services Cross-Departmental Visibility (`CustomerCareComplaintFeed.tsx`):**
   - Head of Distribution Services live intake feed embedded into Services & Maintenance portal (`/portal/services/[unit]`).
   - Categorized oversight into tickets routed to Feeder Maintenance, Transformer Maintenance, and Metering Operations.
@@ -42,7 +37,7 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), adh
 - **Unified Department Header & Central Daily Analytics (`ZoneA_ThinTopHeaderBar.tsx`, `TopCommandBar.tsx`, `central-analytics.tsx`):**
   - Official NESCO crest logo expanded into a prominent, commanding brand mark (`w-11 h-11` glowing emblem, `text-xl` font-mono, `Sovereign Utility 1923`) spanning the full height down on the far-left.
   - "📊 Central Daily Analytics" button shifted towards the right side alongside operational action controls.
-  - Introduced dedicated "🏠 Landing Page" button on the header bar allowing instant navigation back to the primary enterprise portal home (`/`).
+  - Renamed "Landing Page" to "Back" button (`ArrowLeft` icon) and shifted towards the right side alongside Central Analytics, giving the prominent NESCO crest and brand identity full space on the left.
 - **Static Top Header Bar & Fixed Left Navigation Pane (`customer-care.tsx`, `ZoneA_ThinTopHeaderBar.tsx`, `ZoneNav_LeftSidebarPane.tsx`, `TopCommandBar.tsx`):**
   - Pinned the Top Command Bar and Thin Top Header Bar as static/sticky headers (`sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md shrink-0`).
   - Pinned the persistent left-hand navigation pane (`ZoneNav_LeftSidebarPane`) as a static sidebar (`w-full md:w-64 shrink-0 h-full md:sticky md:top-14 md:h-[calc(100vh-3.5rem)] overflow-y-auto`).
