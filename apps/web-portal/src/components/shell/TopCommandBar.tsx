@@ -5,8 +5,10 @@
  */
 
 import React from "react";
+import Link from "next/link";
 import { AuthClaims } from "../../types/auth";
 import { logoutStaff } from "../../features/auth/api";
+import { Home, BarChart3 } from "lucide-react";
 
 interface TopCommandBarProps {
   claims: AuthClaims | null;
@@ -22,24 +24,49 @@ export const TopCommandBar: React.FC<TopCommandBarProps> = ({
   unreadAlertsCount = 0,
 }) => {
   return (
-    <header className="h-16 bg-slate-900 border-b border-slate-800 px-6 flex items-center justify-between sticky top-0 z-40">
-      <div className="flex items-center space-x-4">
-        <div className="flex items-center space-x-2 text-emerald-400 font-bold tracking-wider text-base">
-          <span className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
-            ⚡ NESCO
-          </span>
-          <span className="text-slate-300">/</span>
-          <span className="text-white text-sm font-semibold">{departmentTitle}</span>
+    <header className="h-18 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-40 shadow-md shrink-0">
+      <div className="flex items-center space-x-3 sm:space-x-4">
+        {/* Big Prominent NESCO Logo Crest */}
+        <Link
+          href="/"
+          className="flex items-center space-x-3 px-3.5 py-1.5 bg-gradient-to-r from-emerald-950 via-slate-900 to-slate-950 border border-emerald-500/50 rounded-xl shadow-lg hover:border-emerald-400 transition-all shrink-0 group"
+          title="NESCO 1923 • Return to Main Landing Page"
+        >
+          <div className="w-11 h-11 rounded-lg bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center text-2xl text-emerald-400 group-hover:scale-105 transition-transform shadow-[0_0_16px_rgba(16,185,129,0.35)] shrink-0">
+            ⚡
+          </div>
+          <div className="leading-tight">
+            <div className="flex items-center space-x-1.5">
+              <span className="font-black tracking-widest text-white text-lg sm:text-xl font-mono">
+                NESCO
+              </span>
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded font-extrabold font-mono border border-emerald-500/40">
+                1923
+              </span>
+            </div>
+            <div className="text-[10px] text-emerald-400 font-bold tracking-tight uppercase font-mono">
+              Sovereign Utility
+            </div>
+          </div>
+        </Link>
+        <div className="h-10 w-px bg-slate-800 hidden sm:block" />
+        <div className="max-w-xs md:max-w-none">
+          <div className="text-white text-xs sm:text-sm font-bold tracking-wide truncate">
+            {departmentTitle}
+          </div>
+          <div className="text-[10px] text-slate-400 font-mono tracking-tight hidden md:block">
+            Enterprise Command &bull; Plateau State Grid
+          </div>
         </div>
 
-        <div className="hidden md:flex items-center space-x-2 pl-4 border-l border-slate-800 text-xs">
+        <div className="hidden md:flex items-center space-x-2 pl-3 border-l border-slate-800 text-xs">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-slate-400">Shift Handover:</span>
           <span className="text-emerald-300 font-medium">ACTIVE (08:00 - 16:00)</span>
         </div>
 
         {/* Global Dev Navigation Dropdown */}
-        <div className="hidden lg:flex items-center pl-3">
+        <div className="hidden lg:flex items-center pl-2">
           <select
             onChange={(e) => {
               if (e.target.value) window.location.href = e.target.value;
@@ -48,6 +75,7 @@ export const TopCommandBar: React.FC<TopCommandBarProps> = ({
             className="px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs text-emerald-300 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
           >
             <option value="" disabled>Jump to Department ▾</option>
+            <option value="/portal/central-analytics">📊 Central Daily Analytics Story</option>
             <option value="/executive-command">👑 Executive Command Center</option>
             <option value="/portal/customer-care">📞 Customer Care & KYC</option>
             <option value="/portal/services/feeder">⚡ Feeder Maintenance</option>
@@ -63,7 +91,26 @@ export const TopCommandBar: React.FC<TopCommandBarProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-2.5 sm:space-x-3">
+        {/* Main Landing Page Button */}
+        <Link
+          href="/"
+          className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors shadow-sm"
+          title="Return to Main Landing Page"
+        >
+          <Home className="w-3.5 h-3.5 text-blue-400" />
+          <span className="hidden sm:inline">Landing Page</span>
+        </Link>
+
+        {/* Central Daily Analytics Button (Shifted towards Right) */}
+        <Link
+          href="/portal/central-analytics"
+          className="flex items-center space-x-1.5 bg-emerald-950/80 hover:bg-emerald-900/90 text-emerald-300 border border-emerald-500/50 px-3 py-1.5 rounded-lg font-semibold text-xs transition-colors shadow-sm"
+          title="Overall Company Data Analytics Story for the Day"
+        >
+          <BarChart3 className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="hidden sm:inline">Central Analytics</span>
+        </Link>
         {claims && (
           <div className="flex items-center space-x-3 text-right">
             <div>

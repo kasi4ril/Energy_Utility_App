@@ -5,6 +5,56 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), adh
 
 ---
 
+## [1.1.0] - 2026-10-23
+
+### Added - Enterprise Observations & Blueprint Customer Care Harmonization
+- **Complaints & Customer Growth Query Engine (`AnalyticsPeriodQueryCard.tsx`, `analyticsData.ts`):**
+  - **Yearly Selector**: Interactive historical query options for recorded operational data (`2026 YTD`, `2025 Audit`, `2024 Audit`, `2023 Centenary`).
+  - **Quarterly Selector**: Dedicated options for Quarters 1 through 4 with explicit month groupings:
+    - `Q1` = January, February, March
+    - `Q2` = April, May, June
+    - `Q3` = July, August, September
+    - `Q4` = October, November, December
+  - **Monthly Selector**: Full 12-month spectrum buttons from `January` through `December` (2026).
+  - **Daily Query Filter**: Dual interactive month selector (Jan–Dec) and day selector (Days 1–31) with quick "Today (23 Oct 2026)" reset button, providing granular daily telemetry for any given month.
+  - **Core Metric Display**: Across all period and sub-period queries, dynamically renders:
+    - **Total Complaints Lodged** (inflow tickets count)
+    - **Tickets Resolved** (confirmed closures count)
+    - **Active Unresolved** (backlog and pending tickets count)
+    - **New Customers Onboarded** (NIN-verified registrations)
+    - **Resolution Efficiency Bar**: Real-time dual-color visual progress gauge comparing resolved vs unresolved percentages against the NERC regulatory $\ge 80.0\%$ closure rate.
+- **Customer Revenue, Vending & Meter Fleet Analytics (`BillingVendingMeterAnalyticsCard.tsx`):**
+  - Month-by-month selector (present and historical months: Oct, Sep, Aug, Jul 2026).
+  - Postpaid Paid vs Unpaid/Arrears breakdown with monetary totals.
+  - Prepaid STS Vended vs Zero-Vend/Flagged accounts with token issuance tallies.
+  - Meter Installation Milestone tracker: 14,850 total installed fleet categorized by Residential (R2), Maximum Demand (MD), and Industrial (D1/C1), filterable by monthly and weekly pace.
+- **Distribution Services Cross-Departmental Visibility (`CustomerCareComplaintFeed.tsx`):**
+  - Head of Distribution Services live intake feed embedded into Services & Maintenance portal (`/portal/services/[unit]`).
+  - Categorized oversight into tickets routed to Feeder Maintenance, Transformer Maintenance, and Metering Operations.
+  - One-click work order dispatch action button from incoming customer complaints.
+- **Smart Complaint Auto-Population & Landmark Columns (`View3_SmartComplaintDesk.tsx`):**
+  - Keying in or searching customer account or meter number instantly auto-populates Full Name, Phone (+234), Service Address, and Major Landmark.
+  - Distinct Major Landmark column and input integrated into complaint intake and backend dispatch payload.
+- **National NIN Identity Verification & Name Auto-Population (`View2_NewCustomerKYC.tsx`):**
+  - 11-digit NIN input automatically triggers national identity lookup via NIMC API (`verifyNIN`).
+  - Auto-populates legal verified full customer name and displays a green verified badge.
+  - Dedicated "Major Landmark" input positioned before Premises Physical Address.
+- **Unified Department Header & Central Daily Analytics (`ZoneA_ThinTopHeaderBar.tsx`, `TopCommandBar.tsx`, `central-analytics.tsx`):**
+  - Official NESCO crest logo expanded into a prominent, commanding brand mark (`w-11 h-11` glowing emblem, `text-xl` font-mono, `Sovereign Utility 1923`) spanning the full height down on the far-left.
+  - "📊 Central Daily Analytics" button shifted towards the right side alongside operational action controls.
+  - Introduced dedicated "🏠 Landing Page" button on the header bar allowing instant navigation back to the primary enterprise portal home (`/`).
+- **Static Top Header Bar & Fixed Left Navigation Pane (`customer-care.tsx`, `ZoneA_ThinTopHeaderBar.tsx`, `ZoneNav_LeftSidebarPane.tsx`, `TopCommandBar.tsx`):**
+  - Pinned the Top Command Bar and Thin Top Header Bar as static/sticky headers (`sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md shrink-0`).
+  - Pinned the persistent left-hand navigation pane (`ZoneNav_LeftSidebarPane`) as a static sidebar (`w-full md:w-64 shrink-0 h-full md:sticky md:top-14 md:h-[calc(100vh-3.5rem)] overflow-y-auto`).
+  - Configured the Customer Care layout shell (`h-screen overflow-hidden`) with a dedicated independently-scrollable main workspace (`flex-1 overflow-y-auto min-w-0`), guaranteeing that both the top header and the left navigation pane stand completely still while scrolling up and down.
+- **Omniscient Multi-Database Co-Pilot (`grid_assistant_chat.py`, `GridAssistantDock.tsx`):**
+  - Connected `@GridAssistant` across Stores stockpile (conductors, transformers, fuses, oil), Hydro generation (Kurra, Jekko MW outputs), Feeder outages, Revenue collections, and automated Daily Shift Handover report generation.
+  - Added one-click quick intelligence prompt chips to the slide-out chat dock.
+- **Transitional Visual Login Showcase (`LoginPage.tsx`):**
+  - Dynamic transparent auto-advancing slideshow featuring NESCO historical hydro installations and field lineworkers at work.
+
+---
+
 ## [1.0.0] - 2026-10-22
 
 ### Added - Sprint 10: Full-Stack Wiring, Enterprise UI Shell & Field PWA (`s10_fullstack_wiring`)

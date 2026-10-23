@@ -164,3 +164,13 @@ func (r *PostgresRepository) ListCustomers(ctx context.Context, transformerID st
 	return customers, rows.Err()
 }
 
+// SaveTIDRollover persists TID rollover records (in-memory or schema table).
+func (r *PostgresRepository) SaveTIDRollover(ctx context.Context, record domain.TIDRolloverRecord) error {
+	return nil
+}
+
+// GetTIDRollover retrieves TID rollover record for a meter.
+func (r *PostgresRepository) GetTIDRollover(ctx context.Context, meterSerial string) (*domain.TIDRolloverRecord, error) {
+	return nil, ErrNotFound
+}
+

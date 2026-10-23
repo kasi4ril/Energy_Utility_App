@@ -441,3 +441,52 @@ All frontend-to-backend communication routes through the Go API Gateway (`/api/v
    - Single unified PostgreSQL 16 cluster partitioned into **8 strict logical schemas** (`foundation`, `security_ai`, `customercare`, `services_maint`, `generation_master`, `energy_management`, `stores_audit`, `billing_commercial`).
    - Each Go internal module connects using a schema-scoped database role, while cross-module workflows communicate via **Foreign Keys on `foundation.grid_assets` / `foundation.staff_profiles`** and asynchronous **NATS JetStream events**.
 
+---
+
+# SECTION 12: UPGRADED CUSTOMER CARE ARCHITECTURE, LEFT-HAND NAVIGATION, DATA STORYTELLING & STAFF ATTRIBUTION SPECIFICATION (`s03_customer_care` ENHANCEMENT)
+
+## 12.1 Thin Top Header Bar & Left-Hand Navigation Sidebar Architecture
+1. **Thin Top Header Bar (`ZoneA_ThinTopHeaderBar.tsx`):**
+   - Spans the top of the Customer Care portal displaying:
+     - **Department Name:** `"CUSTOMER CARE & SERVICE DELIVERY DEPARTMENT"`
+     - **Live Date & Time of the Day:** Real-time ticking clock and date (`Africa/Lagos` WAT).
+     - **Active Staff Attribution Badge:** Logged-in Customer Care Representative's Full Name, Staff ID, Shift Window, and SLA Breach Notification Bell.
+2. **Left-Hand Navigation Sidebar (`ZoneNav_LeftSidebarPane.tsx`):**
+   - Positioned persistently on the **left-hand side when facing the screen**, providing one-click navigation across 5 integrated sub-pages (all strictly `<= 350 lines` per file):
+     1. **`View1_AnalyticsStory.tsx` (`/portal/customer-care/analytics`):** Analytics & Data Storytelling Dashboard.
+     2. **`View2_NewCustomerKYC.tsx` (`/portal/customer-care/register`):** New Customer Registration & Metering KYC.
+     3. **`View3_SmartComplaintDesk.tsx` (`/portal/customer-care/complain`):** Smart Complaint Form & Departmental Routing Desk.
+     4. **`View4_TokenAndKCTDesk.tsx` (`/portal/customer-care/metering-kct`):** Prepaid Token, TID Rollover (KCT 1 & 2) & Meter Scheduler.
+     5. **`View5_ClosureGateDesk.tsx` (`/portal/customer-care/closure-desk`):** Mandatory Customer Call-Confirmation & Closure Gate.
+
+## 12.2 Mandatory End-to-End Staff Attribution Rule
+Every ticket routed to a team and every work done across the platform MUST permanently record and display the exact Staff Member's Full Name, Staff ID, Role, and Timestamp:
+- **Logged & Routed By:** `logged_by_cc_staff_id` and `logged_by_cc_staff_name` (the Customer Care Representative who registered the customer or routed the complaint).
+- **Work Executed / Attended To By:** `attended_by_staff_id`, `attended_by_staff_name`, and `assigned_unit_name` (the exact Field Engineer, Feeder Crew Lead, Transformer Technician, Metering Installer, or Billing Officer who performed the work).
+- **Verified & Closed By:** `closed_by_cc_staff_id` and `closed_by_cc_staff_name` (the Customer Care Representative who called the customer to confirm satisfaction and closed the ticket).
+
+## 12.3 Detailed Sub-Page Specifications
+1. **Page 1 — Analytics & Data Storytelling Dashboard:**
+   - **Ollama Executive Data Storytelling Banner:** Automatically synthesizes daily/weekly KPIs, ticket velocity, unit bottlenecks, and top-performing staff into a plain-English executive narrative.
+   - **Visual Storytelling Panels:** Ticket Inflow vs. Verified Closure Velocity, Departmental Routing & MTTR Breakdown (comparing Feeder Maintenance, Transformer Maintenance, Meter Maintenance & Installation, Billing, and STS Vending IT), Staff Productivity & Attribution Leaderboard (showing works logged, routed, attended to, and closed per staff member), and NERC Tier 1 / Tier 2 / Tier 3 SLA Compliance Radar.
+2. **Page 2 — New Customer Registration & Metering KYC:**
+   - Captures Full Name, Phone (`+234`), NIN/CAC ID, Premises PostGIS GPS (`lat/long`), Building Class & **Customer Tariff Class (`R2 Residential`, `C1 Commercial`, `D1 Industrial`, `MD Maximum Demand`)**, and **Estimated Load Assessment (kVA)**.
+   - Links premises to the nearest `11kV/33kV Feeder` and `Distribution Transformer (DT)` with automatic **NERC Service-Based Tariff Band (Band A–E)** display and **MAP / NMMP Metering Scheme Selection (`Single-Phase` / `Three-Phase`)**, stamping `registered_by_cc_staff_name` and routing a site survey to the **Metering Unit Head**.
+3. **Page 3 — Smart Complaint Form & Departmental Routing Desk:**
+   - Captures Source (`WALK_IN`, `CALL_CENTER`, `ONLINE_PORTAL`, `WHATSAPP`), 11/13-Digit Meter or Account verification, Complaint Category & Sub-Category, and Evidence upload.
+   - **Auto-Suggested + Manual Departmental Routing Selector:** Routes directly to:
+     - **Meter Maintenance & Installation Unit Head** *(Watched by Head of Services)*
+     - **Feeder Maintenance Unit Head** *(Watched by Head of Services)*
+     - **Transformer Maintenance Unit Head** *(Watched by Head of Services)*
+     - **Billing Unit Head** *(Watched by Head of Commercial Operations)*
+     - **STS Vending & Billing IT Support Desk** *(Watched by Head of Commercial Operations)*
+   - **Life-Threatening Safety Hazard Triage (`< 2-Hour Emergency SLA`):** Flagging "Live Wire Down / Transformer Fire" triggers a pulsing crimson alert and `< 2-Hour SLA` to the Unit Head, Safety Rep (HSE), and Central Dispatch Operator.
+4. **Page 4 — Prepaid Token, TID Rollover (KCT 1 & 2) & Meter Scheduler:**
+   - Instant lookup for last 5 STS tokens, TID Rollover Key Change Token (`KCT 1` & `KCT 2`) generation, and Meter Installation/Repair slot booking against Metering Unit daily capacity.
+5. **Page 5 — Customer Call-Confirmation & Closure Gate:**
+   - Action queue of all `ATTENDED_TO` tickets showing the routing Customer Care Rep, the exact technical/billing staff member who completed the work (`attended_by_staff_name`), GPS/Before-After photo proof, customer phone call outcome (`CONFIRMED_BY_CUSTOMER` vs. `REJECTED_BY_CUSTOMER`), and final `CLOSE` button stamping `closed_by_cc_staff_name`.
+
+## 12.4 Enriched Database Columns (`schema: customercare`)
+- `customers`: `tariff_class`, `estimated_load_kva`, `feeder_id`, `transformer_id`, `map_scheme_type`, `registered_by_cc_staff_id`, `registered_by_cc_staff_name`.
+- `service_tickets`: `sub_category`, `is_safety_emergency`, `nerc_escalation_tier`, `logged_by_cc_staff_id`, `logged_by_cc_staff_name`, `routed_by_cc_staff_id`, `routed_by_cc_staff_name`, `attended_by_staff_id`, `attended_by_staff_name`, `work_done_summary`, `closed_by_cc_staff_id`, `closed_by_cc_staff_name`, `closed_at`.
+- `meter_schedules`: `scheduled_by_cc_staff_id`, `scheduled_by_cc_staff_name`, `installed_by_staff_id`, `installed_by_staff_name`.

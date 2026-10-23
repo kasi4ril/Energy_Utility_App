@@ -4,7 +4,12 @@
 
 import React from "react";
 
-export type ServicesTask = "work-orders" | "create-order" | "proof-verification" | "unit-analytics";
+export type ServicesTask =
+  | "work-orders"
+  | "create-order"
+  | "proof-verification"
+  | "unit-analytics"
+  | "customer-complaints";
 
 interface NavProps {
   activeTask: ServicesTask;
@@ -54,6 +59,13 @@ export const ServicesMaintNavigation: React.FC<NavProps> = ({
       description: "MTTR & reliability KPIs",
       icon: "📊",
       badge: { count: "MTTR", variant: "emerald" },
+    },
+    {
+      id: "customer-complaints",
+      label: "CC Complaints Feed",
+      description: "Feeder, Transformer & Meter tickets",
+      icon: "📢",
+      badge: { count: "Live", variant: "sky" },
     },
   ];
 

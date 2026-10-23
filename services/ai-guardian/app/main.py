@@ -119,6 +119,7 @@ class AIGuardianHandler(BaseHTTPRequestHandler):
 
 
 def run_server(port: int = 8001) -> None:
+    HTTPServer.allow_reuse_address = True
     server_address = ("0.0.0.0", port)
     httpd = HTTPServer(server_address, AIGuardianHandler)
     logging.info(f"NESCO AI Guardian listening on port {port}...")

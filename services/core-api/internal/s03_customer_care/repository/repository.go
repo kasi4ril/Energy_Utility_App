@@ -34,22 +34,27 @@ type Repository interface {
 
 	CreateMeterSchedule(ctx context.Context, sched domain.MeterSchedule) error
 	ListMeterSchedules(ctx context.Context, status domain.ScheduleStatus) ([]domain.MeterSchedule, error)
+
+	SaveTIDRollover(ctx context.Context, record domain.TIDRolloverRecord) error
+	GetTIDRollover(ctx context.Context, meterSerial string) (*domain.TIDRolloverRecord, error)
 }
 
 // MemoryRepository provides a concurrent, in-memory repository for S03 testing.
 type MemoryRepository struct {
-	mu        sync.RWMutex
-	customers map[string]domain.Customer
-	tickets   map[string]domain.ServiceTicket
-	schedules []domain.MeterSchedule
+	mu         sync.RWMutex
+	customers  map[string]domain.Customer
+	tickets    map[string]domain.ServiceTicket
+	schedules  []domain.MeterSchedule
+	tidRecords map[string]domain.TIDRolloverRecord
 }
 
 // NewMemoryRepository constructs a new in-memory customer care repository.
 func NewMemoryRepository() *MemoryRepository {
 	return &MemoryRepository{
-		customers: make(map[string]domain.Customer),
-		tickets:   make(map[string]domain.ServiceTicket),
-		schedules: make([]domain.MeterSchedule, 0),
+		customers:  make(map[string]domain.Customer),
+		tickets:    make(map[string]domain.ServiceTicket),
+		schedules:  make([]domain.MeterSchedule, 0),
+		tidRecords: make(map[string]domain.TIDRolloverRecord),
 	}
 }
 
@@ -227,5 +232,24 @@ func (m *MemoryRepository) ListMeterSchedules(_ context.Context, status domain.S
 		res = append(res, s)
 	}
 	return res, nil
+}
+
+// SaveTIDRollover records or updates a TID Key Change Token record.
+func (m *MemoryRepository) SaveTIDRollover(_ context.Context, record domain.TIDRolloverRecord) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.tidRecords[record.MeterSerial] = record
+	return nil
+}
+
+// GetTIDRollover retrieves TID rollover tokens for a meter serial.
+func (m *MemoryRepository) GetTIDRollover(_ context.Context, meterSerial string) (*domain.TIDRolloverRecord, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	rec, ok := m.tidRecords[meterSerial]
+	if !ok {
+		return nil, ErrNotFound
+	}
+	return &rec, nil
 }
 

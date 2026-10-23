@@ -55,6 +55,12 @@ func ResolveDirectRouting(category TicketCategory) RoutingTarget {
 			SupervisingDeptRole: string(s01domain.RoleHeadCommercial),
 			SLADurationHours:    24,
 		}
+	case CategorySafetyEmergency:
+		return RoutingTarget{
+			TargetUnitHeadRole:  string(s01domain.RoleUnitHeadFeeder),
+			SupervisingDeptRole: string(s01domain.RoleHeadServices),
+			SLADurationHours:    2,
+		}
 	default:
 		return RoutingTarget{
 			TargetUnitHeadRole:  string(s01domain.RoleCustomerCareHead),
@@ -62,6 +68,15 @@ func ResolveDirectRouting(category TicketCategory) RoutingTarget {
 			SLADurationHours:    12,
 		}
 	}
+}
+
+// ResolveDirectRoutingWithEmergency enforces < 2-hour SLA for life-threatening safety emergencies.
+func ResolveDirectRoutingWithEmergency(category TicketCategory, isEmergency bool) RoutingTarget {
+	target := ResolveDirectRouting(category)
+	if isEmergency || category == CategorySafetyEmergency {
+		target.SLADurationHours = 2
+	}
+	return target
 }
 
 // ValidateClosureGate enforces the exclusive Customer Care telephone confirmation barrier.

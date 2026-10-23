@@ -40,6 +40,12 @@ func TestResolveDirectRouting(t *testing.T) {
 		targetBilling.SLADurationHours != 24 {
 		t.Fatalf("unexpected routing for wrong billing: %+v", targetBilling)
 	}
+
+	// Safety hazard emergency -> Feeder Unit Head, strictly < 2-hour SLA
+	targetSafety := domain.ResolveDirectRoutingWithEmergency(domain.CategorySafetyEmergency, true)
+	if targetSafety.SLADurationHours != 2 {
+		t.Fatalf("expected 2 hour emergency SLA, got %d", targetSafety.SLADurationHours)
+	}
 }
 
 func TestValidateClosureGate_Scenarios(t *testing.T) {

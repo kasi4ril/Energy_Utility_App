@@ -16,6 +16,7 @@ import {
 } from "../../../features/services-maint/ServicesMaintNavigation";
 import { ZoneC_ActionQueue } from "../../../features/services-maint/ZoneC_ActionQueue";
 import { ZoneC_IntakeForm } from "../../../features/services-maint/ZoneC_IntakeForm";
+import { CustomerCareComplaintFeed } from "../../../features/services-maint/CustomerCareComplaintFeed";
 import { fetchWorkOrders, verifyProofOfWork, WorkOrderDTO } from "../../../features/services-maint/api";
 import { parseTokenClaims } from "../../../lib/auth";
 import { AuthClaims } from "../../../types/auth";
@@ -135,6 +136,13 @@ export default function ServicesUnitPage() {
                   PTW Safety Compliance: <span className="font-bold text-emerald-400">100%</span>
                 </p>
               </div>
+            )}
+
+            {activeTask === "customer-complaints" && (
+              <CustomerCareComplaintFeed
+                currentUnit={unitStr}
+                onCreateWorkOrderFromTicket={() => setActiveTask("create-order")}
+              />
             )}
           </div>
         </main>

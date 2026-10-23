@@ -157,3 +157,22 @@ func TestWorkflowService_ScheduleMeterActivity(t *testing.T) {
 	}
 }
 
+func TestWorkflowService_GenerateTIDRolloverKCT(t *testing.T) {
+	svc, _, _ := setupTestService()
+	ctx := context.Background()
+
+	rec, err := svc.GenerateTIDRolloverKCT(ctx, "01429810234", "STAFF-CC-01")
+	if err != nil {
+		t.Fatalf("failed to generate TID rollover: %v", err)
+	}
+	if rec.KCT1 == "" || rec.KCT2 == "" || rec.MeterSerial != "01429810234" {
+		t.Fatalf("unexpected TID rollover values: %+v", rec)
+	}
+
+	// Negative: Empty meter serial
+	_, err = svc.GenerateTIDRolloverKCT(ctx, "", "STAFF-CC-01")
+	if err == nil {
+		t.Fatalf("expected error for empty meter serial")
+	}
+}
+

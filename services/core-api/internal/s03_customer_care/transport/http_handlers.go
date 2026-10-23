@@ -45,10 +45,15 @@ func (h *HTTPHandler) RegisterRoutes(mux *http.ServeMux) {
 	// Meter Schedules
 	mux.Handle("POST /api/v1/meters/schedule", authMW(http.HandlerFunc(h.HandleScheduleMeter)))
 	mux.Handle("GET /api/v1/meters/schedules", authMW(http.HandlerFunc(h.HandleListMeterSchedules)))
+
+	// TID Rollover & Tokens
+	mux.Handle("POST /api/v1/customer-care/tokens/kct", authMW(http.HandlerFunc(h.HandleGenerateKCT)))
+	mux.Handle("POST /api/v1/tokens/kct", authMW(http.HandlerFunc(h.HandleGenerateKCT)))
 }
 
 // HandleOnboardCustomer validates Anti-Ghost GPS proximity and onboards a new customer.
 func (h *HTTPHandler) HandleOnboardCustomer(w http.ResponseWriter, r *http.Request) {
+	claims, _ := auth.ClaimsFromContext(r.Context())
 	var dto OnboardCustomerDTO
 	if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
 		h.jsonError(w, http.StatusBadRequest, "bad_request", "invalid JSON payload")
@@ -59,10 +64,32 @@ func (h *HTTPHandler) HandleOnboardCustomer(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	staffID := dto.StaffID
+	if staffID == "" && claims != nil {
+		staffID = claims.StaffID
+	}
+	staffName := dto.StaffName
+	if staffName == "" {
+		staffName = "Customer Care Officer"
+	}
+	tariffClass := dto.TariffClass
+	if tariffClass == "" {
+		tariffClass = "R2 Residential"
+	}
+	loadKVA := dto.EstimatedLoad
+	if loadKVA <= 0 {
+		loadKVA = 5.0
+	}
+	mapScheme := dto.MAPSchemeType
+	if mapScheme == "" {
+		mapScheme = "Single-Phase MAP"
+	}
+
 	gps := s01domain.GPSPoint{Latitude: dto.Latitude, Longitude: dto.Longitude}
-	cust, err := h.svc.OnboardCustomer(
+	cust, err := h.svc.OnboardCustomerEnriched(
 		r.Context(), dto.FullName, dto.Phone, dto.NIN, dto.BuildingClass,
-		gps, dto.TransformerID, dto.MeterSerial, dto.TariffBand,
+		tariffClass, loadKVA, gps, dto.TransformerID, dto.FeederID,
+		dto.MeterSerial, mapScheme, dto.TariffBand, staffID, staffName,
 	)
 	if err != nil {
 		h.jsonError(w, http.StatusUnprocessableEntity, "onboarding_rejected", err.Error())
@@ -97,6 +124,7 @@ func (h *HTTPHandler) HandleGetCustomer(w http.ResponseWriter, r *http.Request) 
 
 // HandleLogTicket routes an incoming complaint directly to the designated Unit Head.
 func (h *HTTPHandler) HandleLogTicket(w http.ResponseWriter, r *http.Request) {
+	claims, _ := auth.ClaimsFromContext(r.Context())
 	var dto LogTicketDTO
 	if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
 		h.jsonError(w, http.StatusBadRequest, "bad_request", "invalid JSON payload")
@@ -107,7 +135,19 @@ func (h *HTTPHandler) HandleLogTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ticket, err := h.svc.LogServiceTicket(r.Context(), dto.CustomerID, dto.Channel, dto.Category, dto.Description, dto.AssignedUnitID)
+	staffID := dto.StaffID
+	if staffID == "" && claims != nil {
+		staffID = claims.StaffID
+	}
+	staffName := dto.StaffName
+	if staffName == "" {
+		staffName = "Customer Care Officer"
+	}
+
+	ticket, err := h.svc.LogServiceTicketEnriched(
+		r.Context(), dto.CustomerID, dto.Channel, dto.Category, dto.SubCategory,
+		dto.IsSafetyEmergency, dto.Description, dto.AssignedUnitID, dto.AssignedUnitName, staffID, staffName,
+	)
 	if err != nil {
 		h.jsonError(w, http.StatusUnprocessableEntity, "ticket_creation_failed", err.Error())
 		return
@@ -159,7 +199,15 @@ func (h *HTTPHandler) HandleAttendTicket(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	attended, err := h.svc.AttendToTicket(r.Context(), ticketID, dto.ProofNote, claims.StaffID)
+	staffName := dto.StaffName
+	if staffName == "" {
+		staffName = claims.FullName
+	}
+	if staffName == "" {
+		staffName = "Field Technician"
+	}
+
+	attended, err := h.svc.AttendToTicketEnriched(r.Context(), ticketID, dto.ProofNote, dto.WorkDoneSummary, claims.StaffID, staffName)
 	if err != nil {
 		h.jsonError(w, http.StatusUnprocessableEntity, "attend_failed", err.Error())
 		return
@@ -179,8 +227,16 @@ func (h *HTTPHandler) HandleConfirmCloseTicket(w http.ResponseWriter, r *http.Re
 	var dto ConfirmClosureDTO
 	_ = json.NewDecoder(r.Body).Decode(&dto)
 
-	closedTicket, err := h.svc.ConfirmAndCloseTicket(
-		r.Context(), ticketID, claims.StaffID, claims.PrimaryRole, dto.ConfirmedByCustomer, dto.FeedbackNotes,
+	officerName := dto.OfficerName
+	if officerName == "" {
+		officerName = claims.FullName
+	}
+	if officerName == "" {
+		officerName = "Customer Care Representative"
+	}
+
+	closedTicket, err := h.svc.ConfirmAndCloseTicketEnriched(
+		r.Context(), ticketID, claims.StaffID, officerName, claims.PrimaryRole, dto.ConfirmedByCustomer, dto.FeedbackNotes,
 	)
 	if err != nil {
 		h.jsonError(w, http.StatusUnprocessableEntity, "closure_rejected", err.Error())
@@ -191,6 +247,7 @@ func (h *HTTPHandler) HandleConfirmCloseTicket(w http.ResponseWriter, r *http.Re
 
 // HandleScheduleMeter schedules a metering activity.
 func (h *HTTPHandler) HandleScheduleMeter(w http.ResponseWriter, r *http.Request) {
+	claims, _ := auth.ClaimsFromContext(r.Context())
 	var dto ScheduleMeterDTO
 	if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
 		h.jsonError(w, http.StatusBadRequest, "bad_request", "invalid JSON payload")
@@ -201,12 +258,46 @@ func (h *HTTPHandler) HandleScheduleMeter(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	sched, err := h.svc.ScheduleMeterActivity(r.Context(), dto.CustomerID, dto.TicketID, dto.ScheduleType, dto.ScheduledDate)
+	staffID := dto.StaffID
+	if staffID == "" && claims != nil {
+		staffID = claims.StaffID
+	}
+	staffName := dto.StaffName
+	if staffName == "" && claims != nil {
+		staffName = claims.FullName
+	}
+	if staffName == "" {
+		staffName = "Customer Care Officer"
+	}
+
+	sched, err := h.svc.ScheduleMeterActivityEnriched(r.Context(), dto.CustomerID, dto.TicketID, dto.ScheduleType, dto.ScheduledDate, staffID, staffName)
 	if err != nil {
 		h.jsonError(w, http.StatusUnprocessableEntity, "schedule_failed", err.Error())
 		return
 	}
 	h.jsonResponse(w, http.StatusCreated, sched)
+}
+
+// HandleGenerateKCT generates STS compliant 20-digit Key Change Tokens (KCT 1 & 2).
+func (h *HTTPHandler) HandleGenerateKCT(w http.ResponseWriter, r *http.Request) {
+	claims, _ := auth.ClaimsFromContext(r.Context())
+	var dto GenerateKCTDTO
+	if err := json.NewDecoder(r.Body).Decode(&dto); err != nil || strings.TrimSpace(dto.MeterSerial) == "" {
+		h.jsonError(w, http.StatusBadRequest, "bad_request", "meter_serial is required")
+		return
+	}
+
+	staffID := "STAFF-CC-01"
+	if claims != nil {
+		staffID = claims.StaffID
+	}
+
+	rec, err := h.svc.GenerateTIDRolloverKCT(r.Context(), dto.MeterSerial, staffID)
+	if err != nil {
+		h.jsonError(w, http.StatusUnprocessableEntity, "kct_generation_failed", err.Error())
+		return
+	}
+	h.jsonResponse(w, http.StatusOK, rec)
 }
 
 // HandleListMeterSchedules lists meter appointments.
