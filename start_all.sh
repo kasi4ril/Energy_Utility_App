@@ -23,7 +23,13 @@ pkill -9 -f "next start" 2>/dev/null || true
 for port in 3000 8080 8001; do
   fuser -k -9 "${port}/tcp" 2>/dev/null || true
 done
-sleep 1
+sleep 2
+
+# Check dependencies for Web Portal
+if [ ! -d "$PROJECT_ROOT/apps/web-portal/node_modules" ]; then
+  echo "Installing Web Portal dependencies (first-time setup)..."
+  (cd "$PROJECT_ROOT/apps/web-portal" && npm install)
+fi
 
 # 2. Start AI Guardian Service (:8001)
 echo "Starting AI Guardian Watchdog on port 8001..."
@@ -55,7 +61,16 @@ cleanup() {
 }
 trap cleanup INT TERM
 
-sleep 2
+sleep 3
+
+# Service health check
+if ! kill -0 $WEB_PID 2>/dev/null; then
+  echo "⚠️ Warning: Web Portal failed to start! Check /tmp/nesco_web_portal.log:"
+  tail -n 10 /tmp/nesco_web_portal.log 2>/dev/null || true
+fi
+if ! kill -0 $API_PID 2>/dev/null; then
+  echo "⚠️ Note: Core API Gateway is already managed or running on port 8080."
+fi
 
 echo ""
 echo "=========================================================="

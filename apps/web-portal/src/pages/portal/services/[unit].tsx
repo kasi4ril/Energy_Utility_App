@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
+import FeederUnitLandingPage from "./feeder";
 import { TopCommandBar } from "../../../components/shell/TopCommandBar";
 import { GridAssistantDock } from "../../../components/shell/GridAssistantDock";
 import { WorkNotesDrawer } from "../../../components/shell/WorkNotesDrawer";
@@ -70,6 +71,10 @@ export default function ServicesUnitPage() {
   };
 
   const unitTitle = `${unitStr.toUpperCase()} UNIT`;
+
+  if (unitStr === "feeder") {
+    return <FeederUnitLandingPage />;
+  }
 
   return (
     <>

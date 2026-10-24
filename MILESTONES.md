@@ -23,6 +23,7 @@
 | **S09** | `s09_executive_command` | Shared C-Suite Dashboard (MD, Services, Audit, Commercial, Gen, Energy), 4 Predictive Maintenance CBM Models | **COMPLETED & SIGNED-OFF** | 2026-10-22 |
 | **S10** | `s10_fullstack_wiring` | Next.js Unified Login, Role Auto-Router, 4-Zone Enterprise UI, PWA Offline Cache, Docker & NATS Deployment | **COMPLETED & SIGNED-OFF** | 2026-10-22 |
 | **S11** | `s11_customer_care_upgrades` | Section 12 Blueprint Harmonization, Period Analytics Query Engine, NIMC NIN Verification, Landmark Routing, Multi-DB Co-Pilot & Central Daily Storyboard | **COMPLETED & SIGNED-OFF** | 2026-10-23 |
+| **S12** | `s12_generation_master_upgrades` | Section 13 Generation Landing Page Re-Architecture, Persistent Left Navigation Pane, Real-Time DB Analytics, Hourly Reading Sheet Form, Change of Shift with Immutable Notes, Supervisor Requisition | **COMPLETED & SIGNED-OFF** | 2026-10-24 |
 
 ---
 
@@ -189,3 +190,24 @@
   - `services/ai-guardian/app/agents/grid_assistant_chat.py` (223 lines)
   - `apps/web-portal/src/features/auth/LoginPage.tsx` (331 lines)
   - All unit test suites passing 100% with zero regressions across Go, Python, and TypeScript.
+
+### Milestone S12: Generation Landing Page & Core Operational Activities Architecture (`s12_generation_master_upgrades`)
+* **Objective:** Deliver the Section 13 Generation Blueprint upgrades:
+  1. Persistent Left Navigation Sidebar (`GenerationNav_LeftSidebarPane.tsx`) with dedicated endpoints for 4 primary activities.
+  2. Real-Time Generation Analytics & DB Summary (`GenerationAnalyticsView.tsx`, `/portal/generation-master/analytics`) tracking water levels, MW produced vs installed capacity per plant, machines state of health (vibration, thermal, lube oil), and out of service plants with root-cause alerts.
+  3. Hourly Reading Sheet Form for Operator on Duty (`ReadingSheetForm.tsx`, `/portal/generation-master/reading-sheet`) for direct low-latency ingestion straight to `generation_master.master_station_telemetry_logs`.
+  4. Change of Shift Desk (`ChangeOfShiftForm.tsx`, `/portal/generation-master/change-of-shift`) with 6-plant physical muster and **immutable handover notes (cannot be edited once written)** with cryptographic SHA-256 seal.
+  5. Supervisor Requisition Section (`SupervisorRequisitionView.tsx`, `/portal/generation-master/requisition`) for writing official notes, urgent machine alerts, and itemized spare parts requisitions to immediate Unit Heads and the General Manager.
+* **Status:** **COMPLETED & SIGNED-OFF** (2026-10-24)
+* **Verified Deliverables:**
+  - `apps/web-portal/src/features/generation-master/GenerationNav_LeftSidebarPane.tsx` (172 lines)
+  - `apps/web-portal/src/features/generation-master/GenerationAnalyticsView.tsx` (348 lines)
+  - `apps/web-portal/src/features/generation-master/ReadingSheetForm.tsx` (347 lines)
+  - `apps/web-portal/src/features/generation-master/ChangeOfShiftForm.tsx` (349 lines)
+  - `apps/web-portal/src/features/generation-master/SupervisorRequisitionView.tsx` (349 lines)
+  - `apps/web-portal/src/pages/portal/generation-master.tsx` (248 lines)
+  - `apps/web-portal/src/pages/portal/generation-master/analytics.tsx`
+  - `apps/web-portal/src/pages/portal/generation-master/reading-sheet.tsx`
+  - `apps/web-portal/src/pages/portal/generation-master/change-of-shift.tsx`
+  - `apps/web-portal/src/pages/portal/generation-master/requisition.tsx`
+  - Zero-warning TypeScript interfaces, fully adhering to the 350-line limit per file.

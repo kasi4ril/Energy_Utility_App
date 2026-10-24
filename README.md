@@ -48,7 +48,7 @@ Designed for zero SaaS dependency and 100% on-premise execution, the platform em
 | **S02** | `s02_ollama_guardian` | Air-gapped local AI sidecar, Maker-Checker fraud scoring, SHA-256 prev-hash audit ledger, in-app conversational `@GridAssistant`. |
 | **S03** | `s03_customer_care` | Anti-ghost debtor lock, KYC customer onboarding with premises GPS, direct SLA ticket routing, 2-step customer phone confirmation closure gate. |
 | **S04** | `s04_services_maint` | Unit maintenance portals (Feeder, Transformer, Metering), Field PWA, mandatory GPS proof-of-work ($\le 500\text{m}$ proximity) & photo verification. |
-| **S05** | `s05_generation_master` | Remote plant collation (Plants 1–6) at Master Station, hydrological/thermal telemetry, Google Form A HMAC-SHA256 webhook, GM workshop reconditioning loop. |
+| **S05** | `s05_generation_master` | Remote plant collation (Plants 1–6) at Master Station, hydrological/thermal telemetry, Google Form A HMAC-SHA256 webhook, GM workshop loop, and Section 13 Left-Hand Nav Hub (Real-Time DB Analytics, Hourly Reading Sheet, Change of Shift with Immutable Notes, Supervisor Requisitions). |
 | **S06** | `s06_energy_management` | Central Dispatch, bulk MW intake (6 Hydro/Thermal + TCN Hook), priority feeder rationing (Bands A–E), Google Form B webhook, 5-Step Safety Permit-to-Work (PTW) lock. |
 | **S07** | `s07_stores_audit` | Dual-Path material requisitions (Path A In-Stock vs Path B MD Procurement), reverse logistics scrap tracking, automated 3-way staff claims audit desk. |
 | **S08** | `s08_billing_commercial` | Zero-estimation metered billing, 20-digit STS token generation, NERC customer meter refund amortization ledger, wrong billing ticket reversion loop, theft/churn AI detection. |

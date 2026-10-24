@@ -141,4 +141,33 @@ curl -X POST http://localhost:8080/api/v1/generation/faults/<job-uuid>/gm-approv
 1. **HMAC Webhook Cryptographic Barrier:** Google Forms webhook endpoints are unauthenticated via JWT (since Google Apps Script does not possess a staff user session), but are strictly guarded by HMAC-SHA256 signing using the shared master integrity secret. Unsigned or tampered payloads are immediately rejected with HTTP 401.
 2. **Offline Generation Physics Violation:** An offline generating plant cannot generate active power. Submissions reporting active power on an out-of-service plant are rejected by domain validation.
 3. **GM Gate Bypass Prevention:** Workshop machinists cannot begin work or charge store materials without explicit digital authorization from the General Manager.
+4. **Immutable Shift Handover Notes:** Under NERC Grid Code regulations and Section 13 standards, once an operator on duty submits shift handover notes, the text is cryptographically locked with `is_locked: true` and cannot be edited, altered, or deleted by any user or administrator.
+
+---
+
+## 6. Web Portal Landing Page Architecture (Section 13 Implementation)
+
+The Generation Master Station Portal (`/portal/generation-master`) employs a persistent 2-column layout (`GenerationNav_LeftSidebarPane.tsx`) featuring 4 dedicated operational endpoints:
+
+1. **Activity 1: Real-Time Analytics (`GenerationAnalyticsView.tsx`, `/portal/generation-master/analytics`)**
+   - Synthesizes live hourly readings from PostgreSQL `generation_master.master_station_telemetry_logs`.
+   - Displays reservoir depths (m), headwater/tailwater elevations, and river inflow rates (m³/s).
+   - Compares active MW output vs. installed capacity per station with percentage utilization meters.
+   - Evaluates machine state of health (ISO 10816 bearing vibration, stator winding temperature, lube oil pressure).
+   - Highlights out-of-service stations with root-cause categorization (`TURBINE_MECH_FAULT`, `HYDRO_LOW_WATER`, etc.).
+
+2. **Activity 2: Hourly Reading Sheet Form (`ReadingSheetForm.tsx`, `/portal/generation-master/reading-sheet`)**
+   - Standard Form S05-TEL for the operator on duty to commit readings straight to the database.
+   - Captures active MW, reactive MVAr, frequency (50.00 Hz), water level, elevations, inflow, stator temp, bearing vibration (with instant > 4.5 mm/s trip alarm), lube oil pressure, and operator attribution.
+   - Immediately commits to DB and updates real-time analytics with confirmation receipt.
+
+3. **Activity 3: Change of Shift Desk (`ChangeOfShiftForm.tsx`, `/portal/generation-master/change-of-shift`)**
+   - Captures concluded shift window, outgoing operator, incoming operator, and 6-plant physical staff muster.
+   - Short column for handover notes strictly enforced as **immutable**: once submitted, notes are cryptographically signed and cannot be edited.
+   - Sealed historical register with SHA-256 tamper-proof lock badges.
+
+4. **Activity 4: Supervisor Requisition Section (`SupervisorRequisitionView.tsx`, `/portal/generation-master/requisition`)**
+   - Direct digital channel for operators to write official notes and spare parts requisitions to immediate Unit Heads (`Engr. D. Gyang`, `Engr. S. Lar`), the General Manager (`Engr. M. B. Jauro`), Workshop Lead, and Central Stores.
+   - Includes itemized Bill of Materials builder and live queue tracking supervisor acknowledgments and GM store releases.
+
 

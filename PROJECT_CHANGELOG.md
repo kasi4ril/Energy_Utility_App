@@ -5,6 +5,175 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), adh
 
 ---
 
+## [1.4.0] - 2026-10-24
+
+### Added - Services & Maintenance Feeder Unit Landing Page Architecture
+- **Enterprise Shell & Customer Care Standard Layout (`portal/services/feeder.tsx`):**
+  - Designed and deployed the dedicated Feeder Maintenance Unit landing page mirroring the Customer Care department layout: Thin Top Header Bar (`FeederHeaderBar.tsx`) + Persistent Left-Hand Navigation Sidebar (`FeederNav_LeftSidebarPane.tsx`) + 5-point modular operating workspaces.
+  - Thin Top Header Bar features NESCO 1923 sovereign crest, real-time WAT clock, Unit Head staff attribution (`Engr. D. Gyang, MNSE • STAFF-ENG-04`), active line trip alarm bell, and rapid return links to General Landing (`/`) and Central Analytics (`/portal/central-analytics`).
+- **Persistent Left-Hand Navigation Sidebar (`FeederNav_LeftSidebarPane.tsx`):**
+  - Persistent left sidebar pane featuring direct endpoints to all departmental activities:
+    1. Feeder Analytics Dashboard (`/portal/services/feeder/analytics`)
+    2. Outage & PTW Request Form (`/portal/services/feeder/outage-request`)
+    3. Proof of Work Submission Desk (`/portal/services/feeder/proof-of-work`)
+    4. Feeder Technical Standards (`/portal/services/feeder/standards`)
+    5. Active Feeder Work Orders (`/portal/services/feeder/work-orders`)
+  - Includes real-time status badges (`1 Active Outage`, `1 Proof Due`, `2 Active Work Orders`), sister unit quick links (Transformer, Metering), emergency line trip radar pill (Anglo-Jos 33kV fault), and NERC regulatory footer.
+- **Feeder Reliability Analytics Dashboard (`FeederAnalyticsView.tsx`):**
+  - Real-time KPI cards for SAIDI (6.4 hrs), SAIFI (3.8 trips/cust), CAIDI (1.68 hrs), MTTR (2.1 hrs), and Monthly Trips count (9 trips).
+  - Interactive Recharts Donut Pie Chart displaying feeder operational states (In-Service, Fault Outage, PTW Maintenance, Rationing).
+  - Interactive Recharts Bar Chart showing trip density across corridors (Anglo-Jos 33kV, Bukuru 33kV, Rayfield 33kV, Vom 11kV, Makeri 33kV, Bokkos 33kV).
+  - Complete feeder inventory and line health status table.
+- **Outage Requisition & Permit-To-Work Form (`FeederOutageRequestView.tsx`):**
+  - Formal 33kV/11kV planned outage requisition submitted to Central Dispatch & Safety under NERC Grid Code Part 3.
+  - Form parameters: Feeder corridor, outage category, priority urgency, requested date/time window, duration in hours, estimated load drop (MW), affected DT count, physical isolation isolator tag (e.g. `ISO-AJ-04`), and portable earth switch tag (e.g. `ES-AJ-04A`).
+  - **Permit Operational Lifecycle & Closure State Fields:**
+    - Opening (granting) time by Central Dispatch (`opening_time_wat`).
+    - Permit surrendering time by field team lead (`surrendering_time_wat`).
+    - Post-surrender feeder closure state (`closure_outcome`): Closed & Energized Immediately, Left on Load Shedding (Rationing), Tripped on Closure (Fault/Surge), or Pending Surrender.
+  - Hardened with explicit high-contrast `#0f172a` slate background and `#f8fafc` text on all `<select>` and `<option>` elements for legibility across light and dark styles.
+- **Outage Request and Return Register with Calendar Date Query Suite (`FeederOutageRegisterTable.tsx`, `FeederRecordReturnModal.tsx`):**
+  - **Comprehensive Outage Requisition & Return Tracking:** Renamed and upgraded the register to track the full lifecycle of isolation permits from granting to return and re-energization:
+    - **Opening / Granting Time (`opening_time_wat`):** Time when Central Dispatch formally authorized and issued the isolation permit.
+    - **Surrendering Time (`surrendering_time_wat`):** Time when the field maintenance crew leader formally surrendered the permit upon completion.
+    - **Permit Exhaustion & Time Returned (`time_returned_wat`, `is_permit_exhausted`):** When a granted permit is exhausted, the exact timestamp when the permit was returned to dispatch is logged.
+    - **Action Taken on Return (`action_taken_on_return`):** Mandatory field remarks documenting the exact corrective actions executed (e.g. crossarms replaced, conductors tensioned, insulator string washed, jumpers crimped) before line handback.
+    - **Post-Closure Outcome (`closure_outcome`):** Immediate tracking of whether the feeder was `Closed & Energized Immediately`, `Left on Load Shedding` (rationing), or `Tripped on Closure` (flashover/inrush trip).
+  - **Interactive Permit Return Desk Modal (`FeederRecordReturnModal.tsx`):** Dedicated operational modal allowing operators to record the return time, action taken, and feeder closure state for active permits with instant register synchronization.
+  - **Year, Month & Day Calendar Search:** Multi-tiered calendar query engine allowing operators to select:
+    - **Year:** `2026`, `2025`, `2024`, or `All Years`.
+    - **Month:** `01` Jan to `12` Dec with full month names, or `All Months`.
+    - **Day:** Dynamic calendar day selector (`01` through `31`) calculated based on the selected year and month, or `All Days`.
+    - **Calendar Presets & Date Picker:** Quick buttons for `Today (24 Oct 2026)`, `Tomorrow (25 Oct)`, `Oct 2026 (All)`, `Sep 2026 (All)`, and native date picker synchronization.
+  - **Approval State Filter:** Quick filtering for `Approved` (PTW issued, isolated, energized), `Pending` (awaiting dispatch), and `Declined` (rejected by dispatch due to grid / industrial load constraints).
+  - **Dynamic KPI Badges & Active Filter Tags:** Real-time counter pills for Approved, Pending, and Declined requests with single-click "Clear Calendar" dismissal.
+- **Field Proof of Work Submission Desk (`FeederProofOfWorkView.tsx`):**
+  - Anti-ghosting geofenced coordinate verification with strict $\pm 15$m tolerance validation against asset register coordinates.
+  - Side-by-side photographic inspection: Before repair (fault exposed) and After repair (rectified & inspected).
+  - Materials consumed tracking and field work narrative.
+  - Unit Head engineering sign-off desk with authoritative actions: `VERIFIED_APPROVED` (marking order attended to) or `REJECTED_REVISIT` with corrective audit notes.
+- **Feeder Engineering Standards & Line Patrol Register (`FeederStandardsView.tsx`):**
+  - NERC Grid Code & IEEE 80 standards reference cards:
+    - Earth Resistance Testing: Mandatory $< 5.0\ \Omega$ for all switchyard surge arresters, transformer neutrals, and distribution ground pits.
+    - FLIR IR Thermography Criteria: $\Delta T < 10.0^\circ C$ normal operating, $10-25^\circ C$ maintenance order within 48h, $> 25^\circ C$ critical emergency trip.
+    - Right-of-Way (ROW) Clearance: 15m corridor (7.5m either side of centerline) free from vegetation intrusion.
+  - Mandatory NERC 5-Step Electrical Safety Isolation Protocol: Disconnect, Lock & Tag (LOTO), Test Zero Voltage (Prove Dead), Earth & Short, Barricade.
+  - Feeder Line Patrol Register logging pole spans, patroller, vegetation risk, insulator condition, hotspot $\Delta T$, and earth pit ohms.
+- **Active Feeder Work Orders Queue (`FeederWorkOrdersView.tsx`):**
+  - Operational queue with status and priority filtering, PTW mandate verification, and crew status transitions.
+- **Routing & Sub-Routes Integration:**
+  - Dedicated page routes: `/portal/services/feeder`, `/portal/services/feeder/analytics`, `/portal/services/feeder/outage-request`, `/portal/services/feeder/proof-of-work`, `/portal/services/feeder/standards`, `/portal/services/feeder/work-orders`.
+  - Dynamic route fallback in `/portal/services/[unit].tsx` when `unit === "feeder"`.
+  - Linked directly from Executive Command All Departments Launchpad (`AllDepartmentsAnalyticsPortalsCard.tsx`).
+- **Strict Code Limit Compliance:** Every single component and page file strictly adheres to $\le 350$ lines of code.
+
+---
+
+## [1.3.0] - 2026-10-24
+
+### Added - Executive Command Tier & Managing Director Landing Page Architecture
+- **Enterprise Shell & Customer Care 5-Workspace Alignment (`portal/executive-command.tsx`):**
+  - Modernized the Managing Director & CEO Tier-1 command portal to mirror the high-productivity 5-workspace left sidebar layout from Customer Care.
+  - Added thin command header (`ExecutiveHeaderBar.tsx`) with NESCO sovereign crest, real-time Africa/Lagos (WAT) clock, MD/CEO profile badge (`Engr. Dr. E. K. Dung, FNSE, NPOM`), live pending approval bell count, and quick return links to General Landing Page (`/`) and Central Analytics (`/portal/central-analytics`).
+- **Persistent Left-Hand Navigation Sidebar (`ExecutiveNav_LeftSidebarPane.tsx`):**
+  - Persistent left sidebar with real-time status badges (`5 Pending Approvals`, `2 In Review`, `Emergency Grid Alert`, `Action Due`).
+  - Seamless navigation across 5 core executive workspaces and dedicated sub-routes (`/portal/executive-command/[workspace]`):
+    1. `/portal/executive-command/approvals` (Approvals & Requisitions Desk)
+    2. `/portal/executive-command/analytics` (Executive Analytics & Capital Velocity Board)
+    3. `/portal/executive-command/inter-department` (Inter-Departmental Information & Minuting Hub)
+    4. `/portal/executive-command/governance` (MD Professional Responsibilities & Governance Suite)
+    5. `/portal/executive-command/ledger` (Decisions Register & Cryptographic Audit Ledger)
+  - **Executive Portals Hub (All Departments Landing Pages & Analytics Dashboards):**
+    - Expanded the left sidebar and embedded `AllDepartmentsAnalyticsPortalsCard.tsx` in the Analytics board with one-click direct access to all landing pages and specialized analytics dashboards across all 8 divisions:
+      - Central Sovereign Analytics (`/portal/central-analytics` & `/`)
+      - Generation Fleet (Hydro) (`/portal/generation-master/analytics` & `/portal/generation-master`)
+      - Customer Care (CRM) (`/portal/customer-care/analytics` & `/portal/customer-care`)
+      - Energy Dispatch (33kV) (`/portal/energy-management`)
+      - Engineering Services & Maintenance (`/portal/services`)
+      - Commercial Operations & Billing (`/portal/billing-commercial`)
+      - Internal Audit & Compliance (`/portal/internal-audit`)
+      - Stores & Stockpile Inventory (`/portal/stores`)
+- **Requisitions & Approvals Desk (`MDApprovalsDeskView.tsx`, `MDRequisitionActionCard.tsx`):**
+  - Centralized terminal for reviewing requisitions submitted by Departmental Heads:
+    - Generation Manager (Engr. M. B. Jauro): Turbine runner overhauls, high-cost hydro station spares, emergency outage triage.
+    - Head Engineering Services (Engr. F. D. Musa): 33kV transformer bushing replacements, nitrogen purge, HT cable jointing.
+    - Head Commercial Operations (Mr. K. O. Alabi): Industrial tariff adjustments, MD meter CT ratio disputes, vending server migrations.
+    - Head Internal Audit (Mrs. R. A. Adams): Decommissioned transformer scrap disposal, stock variance clearances.
+    - Head Central Stores (Mr. Bitrus Dalyop): Bulk conductor replenishment above local threshold.
+    - Head HSE Safety (Engr. P. Pam): High-risk 33kV corridor right-of-way clearing, emergency equipment lockouts.
+  - **High-Contrast Dropdowns for Light & Dark Styles:**
+    - Hardened Department and Status filter dropdowns with explicit `#0f172a` deep slate navy background and `#f8fafc` crisp white text on both select elements and all option tags, guaranteeing perfect visibility in both light and dark styles.
+  - **Room for MD Review:** Interactive review directives box enabling the MD to query the submitting head or stipulate conditions of approval, updating status to `UNDER_REVIEW`.
+  - **Room for Inter-Departmental Minuting & Relationship Acknowledgment:** Multi-department selector allowing the MD to minute other departmental heads (GM Generation, Head Engineering, Head Audit, Commercial Ops, Stores), keeping inter-departmental teams in the picture (`ACKNOWLEDGED_MINUTED`).
+  - **Authoritative Approval Bar:** One-click digital sign-off (`APPROVE_EXPENDITURE`) with cryptographic SHA-256 seal up to MD delegated limit (₦50,000,000), or `DECLINE_RETURN` with recorded reason.
+- **Executive Analytics & Oversight Board (`MDExecutiveAnalyticsView.tsx`):**
+  - Real-time KPI summary tracking Total Requests Made (₦ Gross Volume), Requests Under Review, Approval Rate %, and Average Decision SLA (< 3.0h vs NERC 12h benchmark).
+  - **Recharts Donut/Pie Chart:** Decision distribution (% Approved, % Under Review, % Pending, % Declined).
+  - **Recharts Bar Chart:** Capital requested vs capital authorized across all 6 departments in Millions ₦.
+  - **All Departments Analytics Portals Launchpad Card (`AllDepartmentsAnalyticsPortalsCard.tsx`):** Direct interactive launchpad cards for all 8 departmental analytics dashboards.
+- **Inter-Departmental Information & Minuting Hub (`MDInterDepartmentHubView.tsx`):**
+  - Ingests cross-departmental operational notices, joint technical memos, and grid advisories (e.g., Generation <-> Central Dispatch Hydrological Balancing, TCN Makeri Substation Islanding Mode, Commercial <-> Audit Tamper Triage).
+  - Executive Minuting input allowing MD to stamp directives and assign action heads with target deadlines.
+- **MD Professional Responsibilities & Governance Suite (`MDGovernanceSuiteView.tsx`):**
+  - NERC & Statutory Regulations (MYTO, NEMSA, FMWR Water Extraction).
+  - Board of Directors Governance (Board resolutions register > ₦50M).
+  - Strategic Concessions & Bilateral PPAs (PRIDA, Grand Cereals).
+  - High-Risk HSE Emergency Command Authority (Level-3 Grid Disaster, Board of Inquiry).
+  - Departmental Heads Scorecards.
+- **Decisions Register & Cryptographic Audit Ledger (`MDDecisionsLedgerView.tsx`):**
+  - Permanent append-only ledger displaying all historical approvals, minuted memorandums, and rejections stamped with SHA-256 cryptographic verification hashes.
+
+---
+
+## [1.2.0] - 2026-10-24
+
+### Added - Generation Department Landing Page & Core Operational Activities Architecture
+- **Persistent Left-Hand Navigation Sidebar Pane (`GenerationNav_LeftSidebarPane.tsx`):**
+  - Integrated 2-column layout shell (`h-screen overflow-hidden`) with a persistent left navigation sidebar and an independently scrollable main operational workspace.
+  - Added direct navigation buttons to **General Landing Page** (`/`) and **General Analytics Page** (`/portal/central-analytics`) in both the top command header and the persistent left navigation pane.
+  - Exposes one-click navigation and distinct route endpoints for 4 primary generation activities:
+    1. `/portal/generation-master/analytics` (Real-Time Generation Analytics & DB Summary)
+    2. `/portal/generation-master/reading-sheet` (Hourly Reading Sheet Form)
+    3. `/portal/generation-master/change-of-shift` (Change of Shift Desk)
+    4. `/portal/generation-master/requisition` (Supervisor Requisition & Notes)
+  - Added live status badge counters (`5/6 Online`, `Log Due`, `Locked`, `Active Requisitions`) and station footer attribution.
+- **Real-Time Generation Analytics & Machine Telemetry Summary (`GenerationAnalyticsView.tsx`):**
+  - Database telemetry synthesis calculating total active power generated versus installed nameplate capacity across Kurra 1, Kurra 2, Kwall 1, Kwall 2, Anoma, and Jere cascade stations.
+  - **Active Plants Output Distribution Charts (`ActivePlantsOutputChartsCard.tsx`):**
+    - **Interactive Pie Chart (% Share of Total Generating Power):** Supports toggling between **At the Moment** (Real-Time MW Output Share) and **For the Day / Last 24 Hours** (Daily MWh Delivered Energy Share) with central donut readout and color-coded station legend badges.
+    - **Active Plants Output Bar Chart:** Visualizes all active generating plants comparing active power output (MW) against installed nameplate capacity (MW), complete with interactive hover tooltips (MW output, capacity, utilization %, and turbine type).
+  - **Hydrology & Machine State of Health (`PlantHealthAndHydrologyGrid.tsx`):**
+    - Reservoir water level meters (depth in meters, headwater and tailwater elevations, and river inflow in m³/s) with minimum head warning gates.
+    - Turbine and generator machine state of health scorecards tracking stator winding temperature (<75°C), ISO 10816 bearing vibration (<3.0 mm/s normal, >4.5 mm/s alert), and lube oil pressure (2.8–4.0 bar).
+  - Out of Service generating stations section highlighting tripped units, root causes (`TURBINE_MECH_FAULT`, `HYDRO_LOW_WATER`), downtime duration, and GM workshop review status.
+  - **Live Tabular Audit Log Feed (`GenerationTelemetryTable.tsx`):** Tabular display of recent hourly readings committed to `generation_master.master_station_telemetry_logs`.
+  - Maintained strict `<= 350` lines limit across all modularized UI components.
+- **Hourly Reading Sheet Form for Operator on Duty (`ReadingSheetForm.tsx`):**
+  - Form S05-TEL enabling Master Station Operators to input and commit telemetry directly into the database.
+  - Captures station identifier, shift window, operational state (`IN_SERVICE`, `STANDBY`, `OUT_OF_SERVICE`) with outage reason categorization, active MW, reactive MVAr, grid frequency (50.00 Hz), water level, head/tail elevations, inflow rate, stator temperature, bearing vibration (with instant ISO trip warning), lube oil pressure, and operator attribution.
+  - Automatically updates active fleet cache in real time with confirmation toast displaying generated log ID and timestamp.
+- **Change of Shift Desk with Immutable Handover Notes (`ChangeOfShiftForm.tsx`):**
+  - NERC Grid Code Section 5.3 compliant shift handover protocol capturing concluded shift window, outgoing operator, incoming operator, and radio/call-collated 6-plant physical muster (operators, protection engineers, mechanical/electrical technicians).
+  - Short column for handover notes strictly enforced as **immutable**: once submitted, the note is signed, stamped with `is_locked: true`, and **CANNOT BE EDITED OR MODIFIED**.
+  - UI interceptor blocking any alteration attempts with a NERC regulatory compliance modal.
+  - Permanent Shift Handover Register displaying historical shifts with SHA-256 tamper-proof lock badges.
+- **Supervisor Requisition & Technical Notes Section (`SupervisorRequisitionView.tsx`):**
+  - Direct digital channel for operators and plant technicians to submit formal notes and material requisitions to immediate supervisors:
+    - Electrical Unit Head (`Engr. D. Gyang`)
+    - Mechanical Unit Head (`Engr. S. Lar`)
+    - General Manager Generation (`Engr. M. B. Jauro`)
+    - Central Workshop Lead (`Mr. Bitrus Dalyop`)
+    - Store Officer (`Central Stores Depot`)
+  - Configurable requisition categories (`MATERIAL_SPARES`, `CRITICAL_ALERT`, `OUTAGE_REQUEST`, `WORKSHOP_ORDER`) and priority levels (`ROUTINE`, `URGENT`, `EMERGENCY_OUTAGE`).
+  - Itemized Bill of Materials / Spares builder with item name, part/spec number, quantity, and unit.
+  - Requisition queue and tracking table with supervisor acknowledgment notes and GM store authorizations.
+- **Dedicated Route Endpoints:**
+  - Added wrapper pages under `apps/web-portal/src/pages/portal/generation-master/`: `analytics.tsx`, `reading-sheet.tsx`, `change-of-shift.tsx`, and `requisition.tsx`.
+
+------
+
+---
+
 ## [1.1.0] - 2026-10-23
 
 ### Added - Enterprise Observations & Blueprint Customer Care Harmonization
@@ -48,6 +217,8 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), adh
 - **Transitional Visual Login Showcase (`LoginPage.tsx`):**
   - Dynamic transparent auto-advancing slideshow featuring NESCO historical hydro installations and field lineworkers at work.
 
+------
+
 ---
 
 ## [1.0.0] - 2026-10-22
@@ -84,6 +255,8 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), adh
   - `services/core-api/internal/s10_fullstack_wiring/STUDY_GUIDE.md`: Comprehensive living study guide detailing full-stack topology, 4-zone UI patterns, PWA offline mechanics, and container orchestration.
   - `MILESTONES.md`: Updated master sprint roadmap to reflect 100% completion across all 10 sprints.
 
+------
+
 ---
 
 ## [0.9.0] - 2026-10-22
@@ -102,6 +275,8 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), adh
   - `services/core-api/internal/s09_executive_command/STUDY_GUIDE.md`: Comprehensive living study guide detailing C-Suite intelligence architecture, physics equations for predictive maintenance models, segregation of duties matrix, and API contracts.
   - `docs/openapi.yaml`: OpenAPI 3.0.3 specification updated with 12 new Executive Command and Predictive Maintenance endpoints.
   - `MILESTONES.md`: Milestone roadmap and detailed execution ledger updated.
+
+------
 
 ---
 
@@ -122,6 +297,8 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), adh
   - `docs/openapi.yaml`: OpenAPI 3.0.3 specification updated with 11 new Billing, Commercial Operations, and Revenue Protection AI endpoints.
   - `MILESTONES.md`: Milestone roadmap and detailed execution ledger updated.
 
+------
+
 ---
 
 ## [0.7.0] - 2026-10-22
@@ -140,6 +317,8 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), adh
   - `services/core-api/internal/s07_stores_audit/STUDY_GUIDE.md`: Comprehensive living study guide detailing `@GridAssistant` inventory integration, dual-path procurement, reverse logistics, and the 3-way claims verification desk.
   - `docs/openapi.yaml`: OpenAPI 3.0.3 specification updated with 13 new Stores and Internal Audit endpoints.
   - `MILESTONES.md`: Milestone roadmap and detailed execution ledger updated.
+
+------
 
 ---
 
@@ -162,6 +341,8 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), adh
   - `docs/openapi.yaml`: OpenAPI 3.0.3 specification updated with 13 new Energy Management and PTW endpoints.
   - `MILESTONES.md`: Milestone roadmap and detailed execution ledger updated.
 
+------
+
 ---
 
 ## [0.5.0] - 2026-10-22
@@ -183,6 +364,8 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), adh
   - `docs/openapi.yaml`: OpenAPI 3.0.3 specification updated with 10 new Generation endpoints.
   - `MILESTONES.md`: Milestone roadmap and detailed execution ledger updated.
 
+------
+
 ---
 
 ## [0.4.0] - 2026-10-22
@@ -202,6 +385,8 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), adh
   - `docs/openapi.yaml`: OpenAPI 3.0.3 specification updated with 5 new endpoints under the `ServicesMaintenance` tag.
   - `MILESTONES.md`: Milestone roadmap and detailed execution ledger updated.
 
+------
+
 ---
 
 ## [0.3.0] - 2026-10-22
@@ -220,6 +405,8 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), adh
   - `services/core-api/internal/s03_customer_care/STUDY_GUIDE.md`: Comprehensive living study guide covering architectural breakdown, execution flows, and cURL examples.
   - `docs/openapi.yaml`: OpenAPI 3.0.3 specification updated with 8 new endpoints across CustomerCare, Tickets, and Metering tags.
   - `MILESTONES.md`: Updated milestone status and execution log.
+
+------
 
 ---
 
@@ -246,6 +433,8 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), adh
   - `services/core-api/internal/s02_ollama_guardian/STUDY_GUIDE.md`: Comprehensive study guide.
   - `docs/openapi.yaml`: OpenAPI spec expanded with all Maker-Checker, Audit Chain, and Chat endpoints.
   - `MILESTONES.md`: Milestone progress ledger updated.
+
+------
 
 ---
 

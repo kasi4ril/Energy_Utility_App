@@ -3,11 +3,14 @@
  */
 
 export type GenerationTask =
+  | "analytics"
+  | "reading-sheet"
+  | "change-of-shift"
+  | "requisition"
   | "fleet-board"
   | "call-collation"
   | "plant-faults"
-  | "workshop"
-  | "analytics";
+  | "workshop";
 
 export type PlantID =
   | "PLANT_01_KURRA_FALLS"
@@ -132,4 +135,71 @@ export interface GenerationAnalytics {
   plants_generation_share: { plant_id: string; name: string; mw: number; pct: number }[];
   weekly_generation_mwh: { day: string; hydro_mwh: number }[];
   active_workshop_jobs_count: number;
+}
+
+export type RequisitionSupervisor =
+  | "ELECTRICAL_UNIT_HEAD"
+  | "MECHANICAL_UNIT_HEAD"
+  | "GM_GENERATION"
+  | "WORKSHOP_LEAD"
+  | "STORES_OFFICER";
+
+export type RequisitionPriority = "ROUTINE" | "URGENT" | "EMERGENCY_OUTAGE";
+
+export type RequisitionType =
+  | "MATERIAL_SPARES"
+  | "CRITICAL_ALERT"
+  | "OUTAGE_REQUEST"
+  | "WORKSHOP_ORDER";
+
+export type RequisitionStatus =
+  | "PENDING_SUPERVISOR_REVIEW"
+  | "SUPERVISOR_ACKNOWLEDGED"
+  | "GM_APPROVED"
+  | "STORES_ROUTED"
+  | "DISPATCHED"
+  | "REJECTED";
+
+export interface RequisitionItem {
+  item_name: string;
+  spec_or_part_no: string;
+  quantity: number;
+  unit: string;
+}
+
+export interface SupervisorRequisition {
+  id: string;
+  requisition_no: string;
+  plant_id: PlantID;
+  supervisor_role: RequisitionSupervisor;
+  supervisor_name: string;
+  requisition_type: RequisitionType;
+  priority: RequisitionPriority;
+  title: string;
+  notes_to_supervisor: string;
+  items_requested?: RequisitionItem[];
+  author_staff_id: string;
+  author_staff_name: string;
+  status: RequisitionStatus;
+  supervisor_response?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface ShiftHandoverRecord {
+  id: string;
+  shift_id: string;
+  shift_window: ShiftWindow;
+  plant_id: PlantID;
+  outgoing_operator_id: string;
+  outgoing_operator_name: string;
+  incoming_operator_id: string;
+  incoming_operator_name: string;
+  operators_on_duty: string[];
+  protection_engineers: string[];
+  technicians: string[];
+  handover_notes: string; // IMMUTABLE once written
+  is_locked: boolean;
+  tamper_hash?: string;
+  created_at: string;
 }

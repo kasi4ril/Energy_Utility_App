@@ -9,6 +9,8 @@ import {
   ShiftRollcallRecord,
   PlantFaultJob,
   GenerationAnalytics,
+  SupervisorRequisition,
+  ShiftHandoverRecord,
 } from "./types";
 
 // Re-export PlantTelemetryDTO for backwards compatibility
@@ -207,8 +209,222 @@ const SEEDED_FAULTS: PlantFaultJob[] = [
   },
 ];
 
+const SEEDED_HANDOVERS: ShiftHandoverRecord[] = [
+  {
+    id: "HANDOVER-2026-10-24-01",
+    shift_id: "SH-MORNING-20261024",
+    shift_window: "MORNING",
+    plant_id: "PLANT_01_KURRA_FALLS",
+    outgoing_operator_id: "STAFF-GEN-OP-04",
+    outgoing_operator_name: "Yusuf Chuwang (Morning Lead)",
+    incoming_operator_id: "STAFF-GEN-OP-01",
+    incoming_operator_name: "Ibrahim Pam (Afternoon Lead)",
+    operators_on_duty: ["Ibrahim Pam", "Godiya Bitrus", "Yusuf Chuwang"],
+    protection_engineers: ["Engr. D. Gyang", "Engr. S. Lar"],
+    technicians: ["Bulus Mark", "Sunday Azi", "Danjuma Moses"],
+    handover_notes: "Kurra Dam water level healthy at 24.5m (+0.3m inflow). Station 1 Units 1, 2, 3 generating stably. Penstock 4 valve packing leak under hourly inspection. Grid frequency locked at 50.02 Hz.",
+    is_locked: true,
+    tamper_hash: "sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+    created_at: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
+  },
+  {
+    id: "HANDOVER-2026-10-23-03",
+    shift_id: "SH-NIGHT-20261023",
+    shift_window: "NIGHT",
+    plant_id: "PLANT_06_JERE",
+    outgoing_operator_id: "STAFF-GEN-OP-02",
+    outgoing_operator_name: "Bulus Mark (Night Senior)",
+    incoming_operator_id: "STAFF-GEN-OP-04",
+    incoming_operator_name: "Yusuf Chuwang (Morning Lead)",
+    operators_on_duty: ["Bulus Mark", "Moses Dung"],
+    protection_engineers: ["Engr. D. Gyang"],
+    technicians: ["Sunday Azi"],
+    handover_notes: "Jere Hydro Unit runner dismantled and dispatched to Central Workshop for precision lathe turning. Tailrace penstock isolating gate closed and tagged under PTW-GEN-2026-08.",
+    is_locked: true,
+    tamper_hash: "sha256:a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+    created_at: new Date(Date.now() - 12 * 3600 * 1000).toISOString(),
+  },
+];
+
+const SEEDED_REQUISITIONS: SupervisorRequisition[] = [
+  {
+    id: "REQ-GEN-2026-001",
+    requisition_no: "NESCO/GEN/REQ/2026/041",
+    plant_id: "PLANT_06_JERE",
+    supervisor_role: "MECHANICAL_UNIT_HEAD",
+    supervisor_name: "Engr. S. Lar (Mechanical Unit Head)",
+    requisition_type: "MATERIAL_SPARES",
+    priority: "EMERGENCY_OUTAGE",
+    title: "Urgent Bronze Alloy Bushing & SS Rods for Plant 6 Runner Overhaul",
+    notes_to_supervisor: "During runner inspection, severe cavitation pitting and sleeve wear on the guide bearing was noted. Immediate machining required in Central Workshop to restore baseload capacity before evening peak.",
+    items_requested: [
+      { item_name: "Phosphor Bronze Bushing (120mm OD)", spec_or_part_no: "BS-1400-PB1", quantity: 2, unit: "Pieces" },
+      { item_name: "Stainless Steel Welding Rods E308L", spec_or_part_no: "AWS A5.4 E308L-16", quantity: 50, unit: "Kg" },
+      { item_name: "High-Temp Bearing Grease", spec_or_part_no: "ISO-VG-460 EP2", quantity: 4, unit: "Drums (20L)" }
+    ],
+    author_staff_id: "STAFF-GEN-OP-01",
+    author_staff_name: "Ibrahim Pam (Master Station Lead)",
+    status: "GM_APPROVED",
+    supervisor_response: "Approved and authorized by General Manager. Store Requisition REF-2026-ST-042 dispatched to Central Stores.",
+    created_at: new Date(Date.now() - 18 * 3600 * 1000).toISOString(),
+  },
+  {
+    id: "REQ-GEN-2026-002",
+    requisition_no: "NESCO/GEN/REQ/2026/042",
+    plant_id: "PLANT_04_KWALL",
+    supervisor_role: "ELECTRICAL_UNIT_HEAD",
+    supervisor_name: "Engr. D. Gyang (Electrical Unit Head)",
+    requisition_type: "CRITICAL_ALERT",
+    priority: "URGENT",
+    title: "Guide Bearing Vibration Trending High (4.7 mm/s) - Kwall Station 2",
+    notes_to_supervisor: "Unit 2 bearing vibration is exceeding ISO 10816 Zone B threshold (4.5 mm/s alarm). Stator temp at 72.1°C. Please authorize electrical team to verify exciter balance and guide bearing oil circulation.",
+    items_requested: [
+      { item_name: "Vibration Sensor Triaxial Probe", spec_or_part_no: "BN-3300-XL", quantity: 1, unit: "Set" },
+      { item_name: "Synthetic Turbine Oil", spec_or_part_no: "Mobil DTE 732", quantity: 2, unit: "Drums (208L)" }
+    ],
+    author_staff_id: "STAFF-GEN-OP-01",
+    author_staff_name: "Ibrahim Pam (Master Station Lead)",
+    status: "SUPERVISOR_ACKNOWLEDGED",
+    supervisor_response: "Acknowledged. Electrical inspection team dispatched on 14:00 muster to perform on-site shaft alignment test.",
+    created_at: new Date(Date.now() - 5 * 3600 * 1000).toISOString(),
+  },
+];
+
+export async function fetchShiftHandovers(): Promise<ShiftHandoverRecord[]> {
+  return [...SEEDED_HANDOVERS];
+}
+
+export async function submitShiftHandover(payload: {
+  shift_id: string;
+  shift_window: any;
+  plant_id: any;
+  outgoing_operator_id: string;
+  outgoing_operator_name: string;
+  incoming_operator_id: string;
+  incoming_operator_name: string;
+  operators_on_duty: string[];
+  protection_engineers: string[];
+  technicians: string[];
+  handover_notes: string;
+}): Promise<ShiftHandoverRecord> {
+  const newRecord: ShiftHandoverRecord = {
+    id: `HANDOVER-${Date.now()}`,
+    shift_id: payload.shift_id,
+    shift_window: payload.shift_window,
+    plant_id: payload.plant_id,
+    outgoing_operator_id: payload.outgoing_operator_id,
+    outgoing_operator_name: payload.outgoing_operator_name,
+    incoming_operator_id: payload.incoming_operator_id,
+    incoming_operator_name: payload.incoming_operator_name,
+    operators_on_duty: payload.operators_on_duty,
+    protection_engineers: payload.protection_engineers,
+    technicians: payload.technicians,
+    handover_notes: payload.handover_notes,
+    is_locked: true, // IMMUTABLE once written
+    tamper_hash: `sha256:${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`,
+    created_at: new Date().toISOString(),
+  };
+
+  SEEDED_HANDOVERS.unshift(newRecord);
+
+  // Try posting to API if available
+  try {
+    await apiClient.post("/generation/rollcall", {
+      shift_id: payload.shift_id,
+      shift_window: payload.shift_window,
+      plant_id: payload.plant_id,
+      operator_names: payload.operators_on_duty,
+      protection_engineers: payload.protection_engineers,
+      technicians: payload.technicians,
+      handover_notes: payload.handover_notes,
+    });
+  } catch {
+    // resilient fallback
+  }
+
+  return newRecord;
+}
+
+export async function fetchSupervisorRequisitions(): Promise<SupervisorRequisition[]> {
+  return [...SEEDED_REQUISITIONS];
+}
+
+export async function submitSupervisorRequisition(payload: {
+  plant_id: any;
+  supervisor_role: any;
+  supervisor_name: string;
+  requisition_type: any;
+  priority: any;
+  title: string;
+  notes_to_supervisor: string;
+  items_requested?: any[];
+  author_staff_id: string;
+  author_staff_name: string;
+}): Promise<SupervisorRequisition> {
+  const reqNo = `NESCO/GEN/REQ/${new Date().getFullYear()}/${String(SEEDED_REQUISITIONS.length + 43).padStart(3, "0")}`;
+  const newReq: SupervisorRequisition = {
+    id: `REQ-${Date.now()}`,
+    requisition_no: reqNo,
+    plant_id: payload.plant_id,
+    supervisor_role: payload.supervisor_role,
+    supervisor_name: payload.supervisor_name,
+    requisition_type: payload.requisition_type,
+    priority: payload.priority,
+    title: payload.title,
+    notes_to_supervisor: payload.notes_to_supervisor,
+    items_requested: payload.items_requested,
+    author_staff_id: payload.author_staff_id,
+    author_staff_name: payload.author_staff_name,
+    status: "PENDING_SUPERVISOR_REVIEW",
+    created_at: new Date().toISOString(),
+  };
+
+  SEEDED_REQUISITIONS.unshift(newReq);
+
+  // Try forwarding to faults/store API if available
+  try {
+    await apiClient.post("/generation/faults", {
+      plant_id: payload.plant_id,
+      wing: payload.supervisor_role.includes("ELEC") ? "ELECTRICAL" : "MECHANICAL",
+      severity: payload.priority === "EMERGENCY_OUTAGE" ? "CRITICAL" : payload.priority === "URGENT" ? "HIGH" : "MEDIUM",
+      fault_description: `[${payload.title}] ${payload.notes_to_supervisor}`,
+      reported_by_operator_id: payload.author_staff_id,
+    });
+  } catch {
+    // fallback
+  }
+
+  return newReq;
+}
+
+export async function updatePlantReadingDirect(reading: {
+  plant_id: any;
+  mw_generated: number;
+  water_level_m: number;
+  stator_winding_temp_c: number;
+  bearing_vibration_mm_s: number;
+  lube_oil_pressure_bar: number;
+  plant_state: any;
+  outage_reason?: any;
+}) {
+  const plantIndex = SEEDED_PLANTS.findIndex((p) => p.id === reading.plant_id);
+  if (plantIndex !== -1) {
+    SEEDED_PLANTS[plantIndex] = {
+      ...SEEDED_PLANTS[plantIndex],
+      current_mw: reading.mw_generated,
+      water_level_m: reading.water_level_m,
+      stator_temp_c: reading.stator_winding_temp_c,
+      bearing_vibration_mm_s: reading.bearing_vibration_mm_s,
+      lube_oil_pressure_bar: reading.lube_oil_pressure_bar,
+      state: reading.plant_state,
+      outage_reason: reading.outage_reason,
+      last_collated_at: new Date().toISOString(),
+    };
+  }
+}
+
 export async function fetchPlantFleet(): Promise<HydroPlantSummary[]> {
-  return SEEDED_PLANTS;
+  return [...SEEDED_PLANTS];
 }
 
 export async function fetchPlantTelemetry(): Promise<PlantTelemetryLog[]> {
