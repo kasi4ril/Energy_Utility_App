@@ -1,45 +1,54 @@
 /**
- * Next.js Page: Energy Management & Central Dispatch (/portal/energy-management).
- * 4-Zone Enterprise Shell for Grid Control, Load Shedding, and 5-Step Safety PTW.
+ * Next.js Page: Energy Management & Central Transmission Dispatch (/portal/energy-management).
+ * Customer Care 5-Workspace Layout Standard:
+ * Thin Top Header Bar + Persistent Left Navigation Sidebar + Modular Workspaces.
  */
 
 import React, { useState, useEffect } from "react";
 import Head from "next/head";
-import { TopCommandBar } from "../../components/shell/TopCommandBar";
+import { useRouter } from "next/router";
+import { EnergyWorkspace } from "../../features/energy-management/types";
+import { EnergyHeaderBar } from "../../features/energy-management/EnergyHeaderBar";
+import { EnergyNav_LeftSidebarPane } from "../../features/energy-management/EnergyNav_LeftSidebarPane";
+import { EnergyAnalyticsView } from "../../features/energy-management/EnergyAnalyticsView";
+import { EnergyLoadSheddingView } from "../../features/energy-management/EnergyLoadSheddingView";
+import { EnergySafetyPTWView } from "../../features/energy-management/EnergySafetyPTWView";
+import { EnergyDispatchLogView } from "../../features/energy-management/EnergyDispatchLogView";
+import { EnergyOutageClearanceView } from "../../features/energy-management/EnergyOutageClearanceView";
 import { GridAssistantDock } from "../../components/shell/GridAssistantDock";
-import { WorkNotesDrawer } from "../../components/shell/WorkNotesDrawer";
-import { ZoneB_DashboardRibbon } from "../../features/energy-management/ZoneB_DashboardRibbon";
-import { ZoneC_ActionQueue } from "../../features/energy-management/ZoneC_ActionQueue";
-import { ZoneC_IntakeForm } from "../../features/energy-management/ZoneC_IntakeForm";
-import {
-  fetchFeeders,
-  fetchPTWPermits,
-  FeederStatusDTO,
-  SafetyPermitDTO,
-} from "../../features/energy-management/api";
+import { apiClient } from "../../lib/api-client";
 import { parseTokenClaims } from "../../lib/auth";
 import { AuthClaims } from "../../types/auth";
-import { apiClient } from "../../lib/api-client";
 
 export default function EnergyManagementPage() {
+  const router = useRouter();
   const [claims, setClaims] = useState<AuthClaims | null>(null);
-  const [feeders, setFeeders] = useState<FeederStatusDTO[]>([]);
-  const [permits, setPermits] = useState<SafetyPermitDTO[]>([]);
+  const [activeWorkspace, setActiveWorkspace] = useState<EnergyWorkspace>("analytics");
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [selectedEntity, setSelectedEntity] = useState<{ type: string; id: string } | null>(null);
 
   useEffect(() => {
     const token = apiClient.getToken();
     if (token) setClaims(parseTokenClaims(token));
-
-    const loadData = async () => {
-      const f = await fetchFeeders();
-      setFeeders(f);
-      const p = await fetchPTWPermits();
-      setPermits(p);
-    };
-    loadData();
   }, []);
+
+  // Sync workspace with query
+  useEffect(() => {
+    const { workspace } = router.query;
+    if (
+      workspace === "analytics" ||
+      workspace === "load-shedding" ||
+      workspace === "safety-ptw" ||
+      workspace === "dispatch-log" ||
+      workspace === "outage-clearance"
+    ) {
+      setActiveWorkspace(workspace as EnergyWorkspace);
+    }
+  }, [router.query]);
+
+  const handleSelectWorkspace = (ws: EnergyWorkspace) => {
+    setActiveWorkspace(ws);
+    router.push(`/portal/energy-management?workspace=${ws}`, undefined, { shallow: true });
+  };
 
   return (
     <>
@@ -47,54 +56,44 @@ export default function EnergyManagementPage() {
         <title>NESCO Central Dispatch &bull; Energy Management</title>
       </Head>
 
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-        <TopCommandBar
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30">
+        {/* Thin Top Header Bar */}
+        <EnergyHeaderBar
           claims={claims}
-          departmentTitle="Central Dispatch & Grid Control"
           onToggleChat={() => setIsChatOpen(!isChatOpen)}
+          frequencyHz={50.02}
+          bulkIntakeMw={63.6}
         />
 
-        <main className="flex-1 p-6 space-y-6 max-w-7xl w-full mx-auto">
-          <ZoneB_DashboardRibbon />
+        {/* 2-Column Standard: Persistent Left Navigation Sidebar + Modular Workspace */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Persistent Left Sidebar */}
+          <EnergyNav_LeftSidebarPane
+            activeWorkspace={activeWorkspace}
+            onSelectWorkspace={handleSelectWorkspace}
+            activeFeedersCount={6}
+            sheddedFeedersCount={1}
+            activePTWCount={1}
+            pendingClearancesCount={1}
+          />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[500px]">
-            <div className="lg:col-span-8">
-              <ZoneC_ActionQueue
-                feeders={feeders}
-                permits={permits}
-                onSelectFeeder={(f) => setSelectedEntity({ type: "feeder", id: f.id })}
-                onSelectPermit={(p) => setSelectedEntity({ type: "ptw_permit", id: p.id })}
-              />
-            </div>
-            <div className="lg:col-span-4">
-              <ZoneC_IntakeForm
-                onSuccess={async () => {
-                  const updated = await fetchFeeders();
-                  setFeeders(updated);
-                }}
-              />
-            </div>
-          </div>
-        </main>
+          {/* Main Operational Workspace */}
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 max-w-7xl w-full mx-auto">
+            {activeWorkspace === "analytics" && <EnergyAnalyticsView />}
+            {activeWorkspace === "load-shedding" && <EnergyLoadSheddingView />}
+            {activeWorkspace === "safety-ptw" && <EnergySafetyPTWView />}
+            {activeWorkspace === "dispatch-log" && <EnergyDispatchLogView />}
+            {activeWorkspace === "outage-clearance" && <EnergyOutageClearanceView />}
+          </main>
+        </div>
 
+        {/* Omniscient AI Assistant Dock */}
         <GridAssistantDock
           isOpen={isChatOpen}
           onClose={() => setIsChatOpen(false)}
-          staffRole={claims?.primary_role || "CENTRAL_DISPATCH_OPERATOR"}
+          staffRole={claims?.primary_role || "CHIEF_DISPATCH_OFFICER"}
         />
-
-        {selectedEntity && claims && (
-          <WorkNotesDrawer
-            isOpen={true}
-            onClose={() => setSelectedEntity(null)}
-            entityType={selectedEntity.type}
-            entityId={selectedEntity.id}
-            authorStaffId={claims.staff_id}
-            authorRole={claims.primary_role}
-          />
-        )}
       </div>
     </>
   );
 }
-

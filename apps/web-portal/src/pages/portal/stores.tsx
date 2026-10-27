@@ -1,91 +1,98 @@
 /**
  * Next.js Page: Store Stock Ledger & Dual-Path Requisitions (/portal/stores).
- * 4-Zone Enterprise Shell for Warehouse and Store Officers.
+ * Customer Care 5-Workspace Layout Standard:
+ * Thin Top Header Bar + Persistent Left Navigation Sidebar + Modular Workspaces.
  */
 
 import React, { useState, useEffect } from "react";
 import Head from "next/head";
-import { TopCommandBar } from "../../components/shell/TopCommandBar";
+import { useRouter } from "next/router";
+import { StoresWorkspace } from "../../features/stores-audit/storesTypes";
+import { StoresHeaderBar } from "../../features/stores-audit/StoresHeaderBar";
+import { StoresNav_LeftSidebarPane } from "../../features/stores-audit/StoresNav_LeftSidebarPane";
+import { StoresAnalyticsView } from "../../features/stores-audit/StoresAnalyticsView";
+import { StoresRequisitionsView } from "../../features/stores-audit/StoresRequisitionsView";
+import { StoresWaybillsView } from "../../features/stores-audit/StoresWaybillsView";
+import { StoresScrapReturnsView } from "../../features/stores-audit/StoresScrapReturnsView";
+import { StoresClaimsCheckView } from "../../features/stores-audit/StoresClaimsCheckView";
 import { GridAssistantDock } from "../../components/shell/GridAssistantDock";
-import { WorkNotesDrawer } from "../../components/shell/WorkNotesDrawer";
-import { ZoneB_DashboardRibbon } from "../../features/stores-audit/ZoneB_DashboardRibbon";
-import { ZoneC_ActionQueue } from "../../features/stores-audit/ZoneC_ActionQueue";
-import { ZoneC_IntakeForm } from "../../features/stores-audit/ZoneC_IntakeForm";
-import { fetchRequisitions, RequisitionDTO } from "../../features/stores-audit/api";
+import { apiClient } from "../../lib/api-client";
 import { parseTokenClaims } from "../../lib/auth";
 import { AuthClaims } from "../../types/auth";
-import { apiClient } from "../../lib/api-client";
 
 export default function StoresPortalPage() {
+  const router = useRouter();
   const [claims, setClaims] = useState<AuthClaims | null>(null);
-  const [requisitions, setRequisitions] = useState<RequisitionDTO[]>([]);
+  const [activeWorkspace, setActiveWorkspace] = useState<StoresWorkspace>("analytics");
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [selectedReq, setSelectedReq] = useState<RequisitionDTO | null>(null);
 
   useEffect(() => {
     const token = apiClient.getToken();
     if (token) setClaims(parseTokenClaims(token));
-
-    const loadReqs = async () => {
-      const data = await fetchRequisitions();
-      setRequisitions(data);
-    };
-    loadReqs();
   }, []);
+
+  // Sync workspace with query
+  useEffect(() => {
+    const { workspace } = router.query;
+    if (
+      workspace === "analytics" ||
+      workspace === "requisitions" ||
+      workspace === "waybills" ||
+      workspace === "scrap-returns" ||
+      workspace === "claims"
+    ) {
+      setActiveWorkspace(workspace as StoresWorkspace);
+    }
+  }, [router.query]);
+
+  const handleSelectWorkspace = (ws: StoresWorkspace) => {
+    setActiveWorkspace(ws);
+    router.push(`/portal/stores?workspace=${ws}`, undefined, { shallow: true });
+  };
 
   return (
     <>
       <Head>
-        <title>NESCO Stores &bull; Stock Ledger & Waybills</title>
+        <title>NESCO Stores &bull; Stock Ledger &amp; Material Logistics</title>
       </Head>
 
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-        <TopCommandBar
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-orange-500/30">
+        {/* Thin Top Header Bar */}
+        <StoresHeaderBar
           claims={claims}
-          departmentTitle="Store Inventory & Material Logistics"
           onToggleChat={() => setIsChatOpen(!isChatOpen)}
+          inventoryValuationNgn={48500000}
+          lowStockItemsCount={2}
         />
 
-        <main className="flex-1 p-6 space-y-6 max-w-7xl w-full mx-auto">
-          <ZoneB_DashboardRibbon />
+        {/* 2-Column Standard: Persistent Left Navigation Sidebar + Modular Workspace */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Persistent Left Sidebar */}
+          <StoresNav_LeftSidebarPane
+            activeWorkspace={activeWorkspace}
+            onSelectWorkspace={handleSelectWorkspace}
+            pendingRequisitionsCount={1}
+            lowStockItemsCount={2}
+            pendingClaimsCount={1}
+          />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[500px]">
-            <div className="lg:col-span-8">
-              <ZoneC_ActionQueue
-                requisitions={requisitions}
-                onSelectRequisition={(r) => setSelectedReq(r)}
-              />
-            </div>
-            <div className="lg:col-span-4">
-              <ZoneC_IntakeForm
-                staffId={claims?.staff_id || "STAFF-STORE-01"}
-                onSuccess={async () => {
-                  const updated = await fetchRequisitions();
-                  setRequisitions(updated);
-                }}
-              />
-            </div>
-          </div>
-        </main>
+          {/* Main Operational Workspace */}
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 max-w-7xl w-full mx-auto">
+            {activeWorkspace === "analytics" && <StoresAnalyticsView />}
+            {activeWorkspace === "requisitions" && <StoresRequisitionsView />}
+            {activeWorkspace === "waybills" && <StoresWaybillsView />}
+            {activeWorkspace === "scrap-returns" && <StoresScrapReturnsView />}
+            {activeWorkspace === "claims" && <StoresClaimsCheckView />}
+          </main>
+        </div>
 
+        {/* Omniscient AI Assistant Dock */}
         <GridAssistantDock
           isOpen={isChatOpen}
           onClose={() => setIsChatOpen(false)}
-          staffRole={claims?.primary_role || "STORE_OFFICER"}
+          staffRole={claims?.primary_role || "HEAD_CENTRAL_STORES"}
         />
-
-        {selectedReq && claims && (
-          <WorkNotesDrawer
-            isOpen={true}
-            onClose={() => setSelectedReq(null)}
-            entityType="requisition"
-            entityId={selectedReq.id}
-            authorStaffId={claims.staff_id}
-            authorRole={claims.primary_role}
-          />
-        )}
       </div>
     </>
   );
 }
-

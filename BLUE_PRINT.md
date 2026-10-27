@@ -699,3 +699,36 @@ The Feeder Maintenance Unit landing page is built strictly adhering to the Custo
 - **Dynamic Fallback:** `apps/web-portal/src/pages/portal/services/[unit].tsx` automatically delegates to `FeederUnitLandingPage` when `unit === "feeder"`.
 - **Strict Modularity Rule:** Every single component and page file strictly adheres to $\le 350$ lines of code.
 
+---
+
+# SECTION 16: UNIVERSAL CUSTOMER CARE LAYOUT MODERNIZATION ACROSS ALL DEPARTMENTS
+
+## 16.1 Standardization Specification
+Every operational department in the Enterprise Utility Platform is unified under the Customer Care layout gold-standard:
+1. **Thin Top Header Bar:** NESCO 1923 Sovereign crest, real-time Africa/Lagos (WAT) ticking clock, staff attribution badge, active alert indicators, and one-click return links to General Landing (`/`) and Central Analytics (`/portal/central-analytics`).
+2. **Persistent Left Navigation Sidebar:** Direct endpoints for 4–5 core departmental responsibilities, real-time status badges, sister department/unit quick links, and statutory regulatory footer.
+3. **Modular Operating Workspaces:** High-contrast dropdowns and inputs (`#0f172a` deep background, `#f8fafc` text), interactive Recharts visualizations, and operational action queues.
+4. **Dedicated Next.js Sub-Routes:** Direct sub-routes for each activity ensuring clean browser history and bookmarking.
+
+## 16.2 Modernized Department Portals Matrix
+1. **Central Energy Management & Transmission Dispatch (`/portal/energy-management`):**
+   - Endpoints: `analytics`, `load-shedding`, `safety-ptw`, `dispatch-log`, `outage-clearance`.
+2. **Commercial Operations & Billing (`/portal/billing-commercial`):**
+   - Endpoints: `analytics`, `vending`, `refunds`, `disputes`, `theft-ai`.
+3. **Stores & Stockpile Inventory (`/portal/stores`):**
+   - Endpoints: `analytics`, `requisitions`, `waybills`, `scrap-returns`, `claims`.
+4. **Internal Audit & Compliance Desk (`/portal/internal-audit`):**
+   - Endpoints: `analytics`, `ledger`, `claims-audit`, `scrap-audit`, `compliance`.
+5. **Transformer Maintenance Unit (`/portal/services/transformer`):**
+   - Endpoints: `analytics`, `dga-testing`, `overhauls`, `proof-of-work`, `standards`.
+6. **Metering Services Unit (`/portal/services/metering`):**
+   - Endpoints: `analytics`, `kct-terminal`, `testing-bench`, `tamper-desk`, `standards`.
+7. **Services Directorate Hub (`/portal/services`):**
+   - Unifies Feeder, Transformer, and Metering engineering units.
+8. **Public Sovereign Landing Page (`/` -> `pages/index.tsx`):**
+   - Live grid telemetry ticker (50.02 Hz nominal frequency, 63.6 MW bulk load, feeders in-service).
+   - Launchpad grid connecting to all 10 modernized operational portals.
+   - 4 Architectural Engineering Pillars (Air-Gapped AI, SHA-256 Chained Ledger, 5-Step Safety PTW, PostGIS Spatial Grid).
+   - Historical tribute honoring NESCO's 1923 pioneer hydroelectric heritage on the Jos Plateau.
+
+

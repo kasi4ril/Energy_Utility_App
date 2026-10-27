@@ -5,6 +5,68 @@ Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), adh
 
 ---
 
+## [1.5.0] - 2026-10-27
+
+### Added - Enterprise Customer Care Layout Modernization Across All Operational Departments & Sovereign Landing Page
+- **Universal Customer Care Standard Layout Enforcement:**
+  - Modernized every operational department to mirror the Customer Care gold-standard: Thin Top Header Bar with sovereign crest & real-time WAT clock + Persistent Left-Hand Navigation Sidebar with real-time badges & sister links + Modular Operating Workspaces.
+  - High-contrast dropdowns and inputs (`#0f172a` deep background, `#f8fafc` text) for light and dark styles.
+- **Energy Management & Central Transmission Dispatch (`/portal/energy-management`):**
+  - 5 core responsibilities outlined in persistent left-hand navigation pane:
+    1. Dispatch & Bulk Intake Analytics (`EnergyAnalyticsView.tsx`): Dual-source MW intake (Hydro 48.6 MW + TCN 15.0 MW), Recharts Donut Pie Chart, 33kV corridor loading Bar Chart, frequency monitor (50.02 Hz).
+    2. Feeder Rationing & Priority Load Shedding (`EnergyLoadSheddingView.tsx`): Bands A through E priority dispatch console, manual shed/restore, algorithm-driven load shedding.
+    3. 5-Step Electrical Safety PTW Isolation Console (`EnergySafetyPTWView.tsx`): Stepper visualizer for NERC 5-step safety isolation, active permits register, line clearance sign-offs.
+    4. Substation Hourly Dispatch Log (`EnergyDispatchLogView.tsx`): Real-time intake for frequency, 33kV bus voltage, MW intake, and dispatcher remarks.
+    5. Outage Coordination Desk (`EnergyOutageClearanceView.tsx`): Real-time handoff with Feeder Maintenance for 33kV/11kV line clearance and post-closure outcome logging.
+- **Commercial Operations & Billing (`/portal/billing-commercial`):**
+  - 5 core responsibilities outlined in persistent left-hand navigation pane:
+    1. Commercial Revenue & Tariff Analytics (`CommercialAnalyticsView.tsx`): Prepaid vs Postpaid MD Recharts Pie Chart, 7-day collections trend Bar Chart, NERC MYTO tariff band matrix (Bands A–E).
+    2. STS Prepayment Vending Terminal (`CommercialVendingTerminalView.tsx`): 20-digit STS encryption token generation (IEC 62055-41), multi-channel fintech hooks (Moniepoint, OPay, GTBank, Zenith), and instant token copy.
+    3. Meter-Purchase Refund Amortization Ledger (`CommercialRefundsLedgerView.tsx`): NERC MAP/NMMP regulatory refund schedule, customer credit amortization, monthly rebate credits against vending.
+    4. Billing Dispute & Wrong-Billing Audit Desk (`CommercialDisputeDeskView.tsx`): MD CT/PT multiplier error adjustments, ticket reversion to Customer Care with `ATTENDED_TO` status.
+    5. Revenue Protection & Energy Theft AI Alerts (`CommercialTheftAlertsView.tsx`): Local air-gapped AI Guardian scans detecting DT unmetered energy loss, CT bypass shunts, and inspection dispatch.
+- **Stores & Stockpile Inventory (`/portal/stores`):**
+  - 5 core responsibilities outlined in persistent left-hand navigation pane:
+    1. Stockpile & Material Analytics (`StoresAnalyticsView.tsx`): Total valuation (₦48.5M), Recharts category breakdown (conductors, insulators, oil drums, switchgear), and low-stock reorder alerts.
+    2. Dual-Path Requisitions Desk (`StoresRequisitionsView.tsx`): Path A (In-Stock: immediate Bin allocation & Waybill issue) vs Path B (Out-of-Stock: escalation to MD Procurement Approval).
+    3. Goods Received & Waybills Terminal (`StoresWaybillsView.tsx`): Supplier delivery intake, QC physical inspection, store bin assignment, and waybill sign-off.
+    4. Scrap Return & Salvage Register (`StoresScrapReturnsView.tsx`): Reverse logistics register for condemned transformers, scrap copper coils, and aluminum cable weigh-in.
+    5. Staff Claims 3-Way Check Desk (`StoresClaimsCheckView.tsx`): Triangulated cross-reference of Duty Roster + Safety PTW + Field GPS radial distance before forwarding to Internal Audit.
+- **Internal Audit & Compliance Desk (`/portal/internal-audit`):**
+  - 5 core responsibilities outlined in persistent left-hand navigation pane:
+    1. Sovereign Audit & Risk Analytics (`AuditAnalyticsView.tsx`): Composite compliance index (96.8%), risk heatmap, open observations register with management response tracking.
+    2. Cryptographic Hash-Chain Ledger Explorer (`AuditLedgerView.tsx`): Full inspection of SHA-256 chained WorkNotes with previous hash continuity verification.
+    3. 3-Way Claims Final Approval Gate (`AuditClaimsGateView.tsx`): Authoritative financial authorization for overtime and travel allowances, with power to approve or refer to disciplinary hearing.
+    4. Scrap Disposal Auction Clearance (`AuditScrapClearanceView.tsx`): Valuation and auction authorization for condemned assets, preventing salvage inventory leakage.
+    5. NERC & NEMSA Regulatory Monitor (`AuditComplianceView.tsx`): Continuous surveillance of fault resolution SLAs, safety rules, and statutory compliance.
+- **Transformer Maintenance Unit (`/portal/services/transformer`):**
+  - 5 core responsibilities outlined in persistent left-hand navigation pane:
+    1. Transformer Fleet Health Analytics (`TransformerAnalyticsView.tsx`): DT fleet loading %, health states Donut Pie Chart, and district loading Bar Chart.
+    2. DGA & Oil Dielectric Lab Desk (`TransformerDGAView.tsx`): ASTM D877/D1816 breakdown voltage tests (BDV > 40kV), moisture ppm, acidity, and oil quality ledger.
+    3. Overhaul & Servicing Queue (`TransformerOverhaulsView.tsx`): Silica gel breather replacement, bushing gasket resealing, vacuum oil filtration, and tap changer overhauls.
+    4. Proof of Work Submission Desk (`TransformerProofOfWorkView.tsx`): GPS ±15m anti-ghost validation, before/after photos, and Unit Head sign-off.
+    5. IEEE C57 & IEC 60076 Standards Reference (`TransformerStandardsView.tsx`): Operating temperature limits, winding insulation, and neutral grounding.
+- **Metering Services Unit (`/portal/services/metering`):**
+  - 5 core responsibilities outlined in persistent left-hand navigation pane:
+    1. Metering Fleet Population Analytics (`MeteringAnalyticsView.tsx`): 14,850 meter fleet distribution (Single-Phase, Three-Phase, MD Industrial) and district penetration charts.
+    2. STS Key Change Token (KCT) Terminal (`MeteringKCTTerminalView.tsx`): Paired 20-digit KCT1 & KCT2 generation for 2024 TID Rollover and Supply Group Code transfers.
+    3. Meter Test & Recalibration Bench (`MeteringTestBenchView.tsx`): NEMSA-certified accuracy testing (Class 0.5S and Class 1.0), creep test, and calibration certificates.
+    4. Bypass & Tamper Investigation Desk (`MeteringTamperInvestigationView.tsx`): Physical seal breach audits, magnetic sensor alerts, reverse current investigations, and fine imposition.
+    5. NERC Metering Code Standards Reference (`MeteringStandardsView.tsx`): Statutory accuracy tolerances, holographic seal protocol, and 10-year recertification cycles.
+- **Engineering Services & Maintenance Directorate Hub (`/portal/services`):**
+  - Unified launchpad bringing together the Feeder, Transformer, and Metering engineering units with live operational stats and direct workspace links.
+- **Public Sovereign Home & Landing Page Redesign (`/` -> `pages/index.tsx`):**
+  - Redesigned with sovereign utility branding: NESCO 1923 crest, live Africa/Lagos (WAT) ticking clock, and real-time grid frequency ticker (50.02 Hz).
+  - Live Grid Telemetry Pulse Ribbon (`LandingGridTicker.tsx`): Hydro generation (48.6 MW), TCN intake (15.0 MW), bulk load (63.6 MW), feeders in-service, and today's collections.
+  - Operational Department Portals Launchpad (`LandingDepartmentGrid.tsx`): Modern responsive grid featuring all 10 modernized departments with live badges and direct links.
+  - Architectural Engineering Pillars (`LandingArchitecturePillars.tsx`): Highlighting 100% Air-Gapped AI Guardian, Cryptographic SHA-256 Ledger, 5-Step Safety PTW Lock, and PostGIS Spatial Geofencing.
+  - Historical Heritage Showcase: Honoring NESCO's pioneer hydroelectric legacy on the Jos Plateau since 1923.
+- **Architectural Quality Compliance:**
+  - Strict enforcement of $\le 350$ lines per file across all newly created components.
+  - Zero TypeScript compilation errors (`tsc --noEmit` clean).
+
+---
+
 ## [1.4.0] - 2026-10-24
 
 ### Added - Services & Maintenance Feeder Unit Landing Page Architecture
